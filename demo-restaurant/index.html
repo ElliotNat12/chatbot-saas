@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Le Petit Lilas — Restaurant Paris 11e</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root { --green: #2d5016; --cream: #faf6f0; --warm: #f5ede0; --text: #1c1c1c; --muted: #6b6b5f; }
+    body { font-family: 'DM Sans', sans-serif; background: var(--cream); color: var(--text); line-height: 1.6; }
+    nav { background: var(--green); padding: 0 2rem; display: flex; align-items: center; justify-content: space-between; height: 64px; }
+    .nav-logo { font-family: 'Playfair Display', serif; font-size: 22px; color: var(--cream); }
+    .nav-links { display: flex; gap: 2rem; list-style: none; }
+    .nav-links a { color: rgba(255,255,255,.75); text-decoration: none; font-size: 14px; }
+    .hero { background: var(--green); color: var(--cream); padding: 5rem 2rem 4rem; text-align: center; }
+    .hero h1 { font-family: 'Playfair Display', serif; font-size: clamp(2.4rem, 6vw, 4rem); font-weight: 400; line-height: 1.15; margin-bottom: 1rem; }
+    .hero h1 em { font-style: italic; color: rgba(255,255,255,.7); }
+    .hero p { font-size: 16px; color: rgba(255,255,255,.65); max-width: 480px; margin: 0 auto 2rem; }
+    .hero-cta { display: inline-block; background: var(--cream); color: var(--green); padding: 12px 24px; border-radius: 40px; text-decoration: none; font-weight: 500; font-size: 14px; }
+    .section { padding: 3.5rem 2rem; max-width: 900px; margin: 0 auto; }
+    h2 { font-family: 'Playfair Display', serif; font-size: 1.9rem; font-weight: 400; margin-bottom: 1.5rem; }
+    .section-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1.5rem; }
+    .info-card { background: #fff; border-radius: 14px; padding: 1.5rem; border: 1px solid rgba(0,0,0,.06); }
+    .info-card-icon { width: 40px; height: 40px; border-radius: 10px; background: var(--warm); display: flex; align-items: center; justify-content: center; font-size: 20px; margin-bottom: 1rem; }
+    .info-card h3 { font-size: 15px; font-weight: 500; margin-bottom: .4rem; }
+    .info-card p { font-size: 13.5px; color: var(--muted); line-height: 1.55; }
+    .menu-section { background: var(--warm); padding: 3.5rem 2rem; }
+    .menu-inner { max-width: 900px; margin: 0 auto; }
+    .menu-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 1rem; margin-top: 2rem; }
+    .menu-item { background: #fff; border-radius: 12px; padding: 1.25rem 1.5rem; display: flex; justify-content: space-between; align-items: baseline; gap: 1rem; }
+    .menu-item-name { font-size: 14px; font-weight: 500; }
+    .menu-item-desc { font-size: 12px; color: var(--muted); margin-top: 2px; }
+    .menu-item-price { font-size: 14px; font-weight: 500; color: #2d5016; white-space: nowrap; }
+    footer { background: var(--green); color: rgba(255,255,255,.6); text-align: center; padding: 2rem; font-size: 13px; }
+    footer strong { color: rgba(255,255,255,.9); }
+    #api-banner { background: #1e1b4b; color: #c7d2fe; padding: 10px 20px; display: flex; align-items: center; gap: 12px; font-size: 13px; flex-wrap: wrap; }
+    #api-banner label { color: #a5b4fc; white-space: nowrap; }
+    #api-key-input { flex: 1; min-width: 200px; max-width: 340px; padding: 6px 10px; border-radius: 6px; border: 1px solid rgba(255,255,255,.2); background: rgba(255,255,255,.08); color: #fff; font-size: 12px; font-family: monospace; }
+    #api-apply { padding: 6px 16px; border-radius: 6px; background: #6366f1; color: #fff; border: none; cursor: pointer; font-size: 12px; font-weight: 500; }
+    .banner-status { font-size: 11px; color: #86efac; display: none; }
+    .banner-status.visible { display: block; }
+  </style>
+</head>
+<body>
+  <div id="api-banner">
+    <label>🔑 Clé API Anthropic :</label>
+    <input type="password" id="api-key-input" placeholder="sk-ant-api03-..." autocomplete="off">
+    <button id="api-apply">Connecter</button>
+    <span class="banner-status" id="banner-status">✓ Chatbot activé — cliquez sur la bulle en bas à droite ↘</span>
+    <span style="margin-left:auto; color:rgba(255,255,255,.4); font-size:11px;">Clé non enregistrée, navigateur uniquement.</span>
+  </div>
+  <nav>
+    <span class="nav-logo">Le Petit Lilas</span>
+    <ul class="nav-links">
+      <li><a href="#">Menu</a></li>
+      <li><a href="#">Réservation</a></li>
+      <li><a href="#">Nous trouver</a></li>
+      <li><a href="#">Contact</a></li>
+    </ul>
+  </nav>
+  <section class="hero">
+    <h1>Cuisine <em>maison</em><br>de saison</h1>
+    <p>Une table de quartier, des produits du marché, une cuisine qui respecte les saisons.</p>
+    <a href="#" class="hero-cta">Réserver une table →</a>
+  </section>
+  <section class="section">
+    <h2>Informations pratiques</h2>
+    <div class="section-grid">
+      <div class="info-card"><div class="info-card-icon">🕐</div><h3>Horaires</h3><p>Lun–Sam : 12h–14h30 et 19h–22h30<br>Dimanche : fermé</p></div>
+      <div class="info-card"><div class="info-card-icon">📍</div><h3>Adresse</h3><p>12 rue des Lilas, Paris 11e<br>Métro Voltaire (ligne 9)</p></div>
+      <div class="info-card"><div class="info-card-icon">🐾</div><h3>Terrasse & animaux</h3><p>Terrasse chauffée. Animaux admis en terrasse.</p></div>
+      <div class="info-card"><div class="info-card-icon">💳</div><h3>Paiement</h3><p>CB, Visa, Mastercard, espèces.<br>Chèques non acceptés.</p></div>
+    </div>
+  </section>
+  <section class="menu-section">
+    <div class="menu-inner">
+      <h2>Un aperçu de notre carte</h2>
+      <div class="menu-grid">
+        <div class="menu-item"><div><div class="menu-item-name">Burrata, tomates rôties</div><div class="menu-item-desc">Basilic, huile d'olive AOC</div></div><div class="menu-item-price">12€</div></div>
+        <div class="menu-item"><div><div class="menu-item-name">Tartare de bœuf</div><div class="menu-item-desc">Câpres, cornichons, frites maison</div></div><div class="menu-item-price">22€</div></div>
+        <div class="menu-item"><div><div class="menu-item-name">Pavé de saumon</div><div class="menu-item-desc">Légumes de saison, beurre blanc</div></div><div class="menu-item-price">24€</div></div>
+        <div class="menu-item"><div><div class="menu-item-name">Tarte tatin</div><div class="menu-item-desc">Crème fraîche fermière</div></div><div class="menu-item-price">8€</div></div>
+      </div>
+    </div>
+  </section>
+  <footer><strong>Le Petit Lilas</strong> — 12 rue des Lilas, 75011 Paris — 01 23 45 67 89</footer>
+
+  <script src="../widget/chatbot.js"></script>
+  <script>
+    document.getElementById('api-apply').addEventListener('click', () => {
+      const key = document.getElementById('api-key-input').value.trim();
+      if (!key || !key.startsWith('sk-')) {
+        document.getElementById('api-key-input').style.borderColor = '#f87171';
+        setTimeout(() => document.getElementById('api-key-input').style.borderColor = '', 1500);
+        return;
+      }
+      const old = document.querySelector('[data-chatbot-saas]');
+      if (old) old.remove();
+      ChatbotSaaS.init({
+        apiKey: key,
+        botName: 'Lili',
+        avatar: '🌸',
+        businessName: 'Le Petit Lilas',
+        businessDescription: 'Restaurant français de quartier, cuisine maison et de saison.',
+        accentColor: '#7c3aed',
+        phone: '01 23 45 67 89',
+        phoneHours: 'du lundi au samedi, 10h–22h',
+        bookingUrl: 'https://lepetitlilas.fr/reservation',
+        greeting: 'Bonjour ! Je suis Lili, l\'assistante du Petit Lilas. Une question sur nos horaires, menus ou réservations ?',
+        suggestions: ['Vous êtes ouverts ce soir ?', 'C\'est combien le menu ?', 'Are you open for lunch?', 'Vous avez une terrasse ?', 'Comment réserver ?'],
+        faq: `Horaires : Lun-Sam 12h-14h30 et 19h-22h30. Fermé dimanche.
+Adresse : 12 rue des Lilas, Paris 11e. Métro Voltaire ligne 9.
+Parking : pas de parking dédié — parking Voltaire à 200m.
+Menus : Déjeuner 18€ (entrée+plat ou plat+dessert) ou 22€ (3 plats). Soir : entrées 8-14€, plats 18-26€, desserts 7-9€. Menu enfant 10€.
+Réservation : en ligne sur lepetitlilas.fr/reservation ou par téléphone. Groupes +8 personnes : téléphone uniquement.
+Terrasse : oui, cour intérieure chauffée, ~20 couverts. Animaux admis en terrasse uniquement.
+Allergènes : carte disponible sur demande. Options végétariennes chaque jour.
+Paiement : CB Visa Mastercard espèces. Pas de chèques. Wifi : non.`,
+        badgeDelay: 3000,
+        errorMessage: 'Je rencontre un problème technique. Appelez-nous au 01 23 45 67 89.',
+      });
+      document.getElementById('banner-status').classList.add('visible');
+    });
+  </script>
+</body>
+</html>
