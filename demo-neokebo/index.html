@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Neokebo — Création de sites web</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root { --dark: #0f172a; --blue: #3b82f6; --light: #f8fafc; --muted: #64748b; }
+    body { font-family: 'Inter', sans-serif; background: var(--light); color: var(--dark); line-height: 1.6; }
+
+    nav {
+      background: var(--dark);
+      padding: 0 2rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      height: 64px;
+    }
+    .nav-logo { font-size: 20px; font-weight: 700; color: #fff; letter-spacing: -.02em; }
+    .nav-logo span { color: var(--blue); }
+    .nav-links { display: flex; gap: 2rem; list-style: none; }
+    .nav-links a { color: rgba(255,255,255,.65); text-decoration: none; font-size: 14px; }
+    .nav-cta {
+      background: var(--blue);
+      color: #fff;
+      padding: 8px 18px;
+      border-radius: 8px;
+      text-decoration: none;
+      font-size: 13px;
+      font-weight: 500;
+    }
+
+    .hero {
+      background: var(--dark);
+      color: #fff;
+      padding: 6rem 2rem 5rem;
+      text-align: center;
+    }
+    .hero-tag {
+      display: inline-block;
+      background: rgba(59,130,246,.15);
+      color: #93c5fd;
+      font-size: 12px;
+      padding: 4px 12px;
+      border-radius: 20px;
+      margin-bottom: 1.5rem;
+      border: 1px solid rgba(59,130,246,.3);
+    }
+    .hero h1 {
+      font-size: clamp(2rem, 5vw, 3.5rem);
+      font-weight: 700;
+      line-height: 1.1;
+      letter-spacing: -.03em;
+      margin-bottom: 1.25rem;
+    }
+    .hero h1 span { color: var(--blue); }
+    .hero p { font-size: 16px; color: rgba(255,255,255,.6); max-width: 520px; margin: 0 auto 2.5rem; }
+    .hero-btns { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+    .btn-primary {
+      background: var(--blue);
+      color: #fff;
+      padding: 13px 24px;
+      border-radius: 10px;
+      text-decoration: none;
+      font-weight: 500;
+      font-size: 14px;
+    }
+    .btn-secondary {
+      background: rgba(255,255,255,.08);
+      color: #fff;
+      padding: 13px 24px;
+      border-radius: 10px;
+      text-decoration: none;
+      font-size: 14px;
+      border: 1px solid rgba(255,255,255,.15);
+    }
+
+    .section { padding: 4rem 2rem; max-width: 960px; margin: 0 auto; }
+    .section-tag { font-size: 12px; font-weight: 600; color: var(--blue); text-transform: uppercase; letter-spacing: .08em; margin-bottom: .75rem; }
+    h2 { font-size: 1.75rem; font-weight: 700; letter-spacing: -.02em; margin-bottom: 1rem; }
+    .section-sub { color: var(--muted); font-size: 15px; margin-bottom: 2.5rem; }
+
+    .services-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 1rem; }
+    .service-card {
+      background: #fff;
+      border: 1px solid #e2e8f0;
+      border-radius: 14px;
+      padding: 1.5rem;
+      transition: box-shadow .15s;
+    }
+    .service-card:hover { box-shadow: 0 4px 20px rgba(0,0,0,.08); }
+    .service-icon { font-size: 28px; margin-bottom: 1rem; }
+    .service-card h3 { font-size: 15px; font-weight: 600; margin-bottom: .4rem; }
+    .service-card p { font-size: 13px; color: var(--muted); line-height: 1.55; }
+
+    .pricing-section { background: var(--dark); padding: 4rem 2rem; }
+    .pricing-inner { max-width: 960px; margin: 0 auto; }
+    .pricing-inner .section-tag { color: #93c5fd; }
+    .pricing-inner h2 { color: #fff; }
+    .pricing-inner .section-sub { color: rgba(255,255,255,.5); }
+    .pricing-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 1rem; }
+    .pricing-card {
+      background: rgba(255,255,255,.05);
+      border: 1px solid rgba(255,255,255,.1);
+      border-radius: 14px;
+      padding: 1.75rem;
+    }
+    .pricing-card.featured { background: var(--blue); border-color: var(--blue); }
+    .pricing-card h3 { font-size: 14px; font-weight: 500; color: rgba(255,255,255,.7); margin-bottom: .5rem; }
+    .pricing-card.featured h3 { color: rgba(255,255,255,.85); }
+    .pricing-amount { font-size: 2rem; font-weight: 700; color: #fff; margin-bottom: .25rem; }
+    .pricing-desc { font-size: 13px; color: rgba(255,255,255,.5); margin-bottom: 1.25rem; }
+    .pricing-card.featured .pricing-desc { color: rgba(255,255,255,.7); }
+    .pricing-features { list-style: none; }
+    .pricing-features li { font-size: 13px; color: rgba(255,255,255,.65); padding: 4px 0; }
+    .pricing-features li::before { content: '✓ '; color: #4ade80; }
+
+    .cta-section { background: var(--blue); padding: 4rem 2rem; text-align: center; }
+    .cta-section h2 { color: #fff; font-size: 1.75rem; margin-bottom: .75rem; }
+    .cta-section p { color: rgba(255,255,255,.8); margin-bottom: 2rem; }
+    .cta-btn { background: #fff; color: var(--blue); padding: 13px 28px; border-radius: 10px; text-decoration: none; font-weight: 600; font-size: 14px; }
+
+    footer { background: var(--dark); color: rgba(255,255,255,.4); text-align: center; padding: 2rem; font-size: 13px; }
+    footer strong { color: rgba(255,255,255,.8); }
+  </style>
+</head>
+<body>
+
+  <nav>
+    <span class="nav-logo">Neo<span>kebo</span></span>
+    <ul class="nav-links">
+      <li><a href="#">Services</a></li>
+      <li><a href="#">Réalisations</a></li>
+      <li><a href="#">Tarifs</a></li>
+    </ul>
+    <a href="#" class="nav-cta">Devis gratuit</a>
+  </nav>
+
+  <section class="hero">
+    <span class="hero-tag">Agence web · Spécialiste restauration & PME</span>
+    <h1>Votre site web qui<br><span>attire des clients</span></h1>
+    <p>Benoît crée des sites professionnels pour les restaurants, artisans et PME. Clé en main, sans jargon.</p>
+    <div class="hero-btns">
+      <a href="#" class="btn-primary">Demander un devis gratuit →</a>
+      <a href="#" class="btn-secondary">Voir les réalisations</a>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="section-tag">Ce qu'on fait</div>
+    <h2>Des sites pensés pour convertir</h2>
+    <p class="section-sub">Pas juste beaux — efficaces. Chaque site est conçu pour transformer les visiteurs en clients.</p>
+    <div class="services-grid">
+      <div class="service-card">
+        <div class="service-icon">🍽️</div>
+        <h3>Restaurants & bars</h3>
+        <p>Menu en ligne, réservation, horaires, photos — tout ce qu'il faut pour remplir votre salle.</p>
+      </div>
+      <div class="service-card">
+        <div class="service-icon">🏗️</div>
+        <h3>BTP & artisans</h3>
+        <p>Site de présentation, galerie chantiers, devis en ligne — pour décrocher plus de contrats.</p>
+      </div>
+      <div class="service-card">
+        <div class="service-icon">🏢</div>
+        <h3>PME locales</h3>
+        <p>Vitrine professionnelle, référencement local, formulaire de contact — visibilité garantie.</p>
+      </div>
+      <div class="service-card">
+        <div class="service-icon">🛒</div>
+        <h3>E-commerce</h3>
+        <p>Boutique en ligne clé en main pour vendre vos produits 24h/24.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="pricing-section">
+    <div class="pricing-inner">
+      <div class="section-tag">Tarifs</div>
+      <h2>Transparent, sans surprises</h2>
+      <p class="section-sub">Un devis gratuit et détaillé avant de commencer. Aucun frais caché.</p>
+      <div class="pricing-grid">
+        <div class="pricing-card">
+          <h3>Site vitrine</h3>
+          <div class="pricing-amount">À partir de 800€</div>
+          <div class="pricing-desc">Idéal pour se lancer</div>
+          <ul class="pricing-features">
+            <li>Design sur mesure</li>
+            <li>Mobile responsive</li>
+            <li>Formulaire de contact</li>
+            <li>Livré en 2-4 semaines</li>
+          </ul>
+        </div>
+        <div class="pricing-card featured">
+          <h3>Site restaurant complet</h3>
+          <div class="pricing-amount">Sur devis</div>
+          <div class="pricing-desc">La formule la plus demandée</div>
+          <ul class="pricing-features">
+            <li>Menu interactif</li>
+            <li>Réservation en ligne</li>
+            <li>Galerie photos</li>
+            <li>SEO local inclus</li>
+          </ul>
+        </div>
+        <div class="pricing-card">
+          <h3>Refonte + SEO</h3>
+          <div class="pricing-amount">Sur devis</div>
+          <div class="pricing-desc">Pour les sites existants</div>
+          <ul class="pricing-features">
+            <li>Audit du site actuel</li>
+            <li>Nouveau design</li>
+            <li>Optimisation vitesse</li>
+            <li>Référencement Google</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="cta-section">
+    <h2>Un projet en tête ?</h2>
+    <p>Benoît répond sous 24h. Devis gratuit, sans engagement.</p>
+    <a href="mailto:benoit.dambrun.25@neoma-bs.com" class="cta-btn">Envoyer un message →</a>
+  </section>
+
+  <footer>
+    <strong>Neokebo</strong> — Benoît Dambrun · 06 50 89 65 89 · benoit.dambrun.25@neoma-bs.com
+  </footer>
+
+  <script src="../widget/chatbot.js"></script>
+  <script src="config.js"></script>
+
+</body>
+</html>
