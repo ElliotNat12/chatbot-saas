@@ -89,6 +89,34 @@ module.exports = async function handler(req, res) {
     errors.push('email: ' + err.message);
   }
 
+  // Résumé IA de la conversation
+  let resumeIA = resume || '';
+  if (resume && process.env.ANTHROPIC_API_KEY) {
+    try {
+      const aiRes = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-key': process.env.ANTHROPIC_API_KEY,
+          'anthropic-version': '2023-06-01',
+        },
+        body: JSON.stringify({
+          model: 'claude-haiku-4-5-20251001',
+          max_tokens: 256,
+          messages: [{
+            role: 'user',
+            content: `Voici une conversation entre un prospect et un chatbot commercial, les messages sont séparés par " | " :\n\n${resume}\n\nRésume cette conversation en exactement 3 lignes, en français, sans bullet points, sans gras, sans mise en forme. Préfixe chaque ligne par son label suivi de deux-points :\nIntention : ce que le prospect veut faire\nProjet : type de site, spécificités mentionnées\nContexte : taille, marché, situation actuelle\n\nSois concis. Réponds uniquement avec ces 3 lignes, rien d'autre.`,
+          }],
+        }),
+      });
+      const aiData = await aiRes.json();
+      const text = aiData?.content?.[0]?.text?.trim();
+      if (text) resumeIA = text;
+    } catch (_) {
+      // garde le résumé brut si l'appel IA échoue
+    }
+  }
+
   // WhatsApp via Twilio
   try {
     const client = twilio(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN);
@@ -100,7 +128,7 @@ module.exports = async function handler(req, res) {
       tel ? `📞 ${tel}` : null,
       projet ? `💼 ${projet}` : null,
       budget ? `💰 ${budget}` : null,
-      resume ? `📝 ${resume.slice(0, 200)}` : null,
+      resumeIA ? `📝 ${resumeIA}` : null,
     ].filter(Boolean).join('\n');
 
     await client.messages.create({
