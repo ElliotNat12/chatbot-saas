@@ -1,4 +1,4 @@
-ChatbotSaaS.init({
+ChatbotSaaS.init({apiEndpoint: '/api/chat',
 
   botName: 'Néo',
   avatar: '💻',
