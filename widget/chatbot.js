@@ -218,7 +218,7 @@
     const badge      = document.getElementById('cb-badge');
     const suggestBox = document.getElementById('cb-suggestions');
 
-    let history = [], isOpen = false, isTyping = false, greeted = false, lead = {}, notifySent = false;
+    let history = [], isOpen = false, isTyping = false, greeted = false, lead = {}, notifySent = false, formShown = false;
 
     function now() {
       return new Date().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
@@ -314,6 +314,19 @@
         const resume = history.filter(m => m.role === 'user').map(m => m.content).join(' | ');
         sendNotify({ ...lead, resume });
       }
+      if (showForm) formShown = true;
+
+      // Détection implicite d'email/téléphone dans les messages utilisateur
+      if (!notifySent && (formShown || lead.score === 'chaud')) {
+        const userTexts = history.filter(m => m.role === 'user').map(m => m.content).join(' ');
+        const emailMatch = userTexts.match(/[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}/);
+        if (emailMatch) {
+          const telMatch = userTexts.match(/(?:(?:\+33|0033|0)[1-9](?:[\s.\-]?\d{2}){4})/);
+          const resume = history.filter(m => m.role === 'user').map(m => m.content).join(' | ');
+          sendNotify({ score: 'chaud', ...lead, email: emailMatch[0], tel: telMatch ? telMatch[0] : (lead.tel || ''), resume });
+        }
+      }
+
       history.push({ role: 'assistant', content: clean });
       return { text: clean, showForm };
     }
@@ -337,7 +350,8 @@
     }
 
     function showLeadForm() {
-      if (document.getElementById('cb-lead-form')) return;
+      const existing = document.getElementById('cb-lead-form');
+      if (existing) existing.remove();
       const form = document.createElement('form');
       form.id = 'cb-lead-form';
       form.className = 'cb-lead-form';
@@ -392,7 +406,7 @@
     if (cfg.badgeDelay !== false) setTimeout(() => { if (!isOpen) badge.classList.add('visible'); }, cfg.badgeDelay || 4000);
     if (cfg.autoOpen) setTimeout(openChat, cfg.autoOpen);
 
-    return { open: openChat, close: closeChat, reset: () => { history = []; greeted = false; lead = {}; notifySent = false; } };
+    return { open: openChat, close: closeChat, reset: () => { history = []; greeted = false; lead = {}; notifySent = false; formShown = false; } };
   }
 
   function buildSystemPrompt(cfg) {
@@ -439,10 +453,15 @@ Exemple :
 [SHOW_FORM]"
 
 Règles strictes :
-- N'émets [SHOW_FORM] qu'UNE SEULE FOIS dans toute la conversation
 - [SHOW_FORM] ne doit PAS apparaître dans le texte visible — c'est un tag invisible
 - Ne demande PAS les coordonnées toi-même — le formulaire s'en charge
 - Pour les leads froids ou tièdes, n'émets PAS [SHOW_FORM]
+- Tu peux émettre [SHOW_FORM] à nouveau si l'intention d'achat redevient forte après un silence, ou si le prospect mentionne explicitement vouloir laisser ses coordonnées ou être rappelé
+
+## COLLECTE DE COORDONNÉES DIRECTES
+Si le prospect donne son email ou son téléphone directement dans le chat (sans passer par un formulaire), émets à la fin de ta réponse, sur une ligne séparée :
+[NOTIFY:{"score":"chaud","email":"adresse@detectee.com","tel":"numero detecte"}]
+N'inclus que les champs que le prospect a explicitement communiqués. Ce tag est invisible et ne doit jamais apparaître dans le texte visible.
 
 ## ESCALADE ET SÉCURITÉ
 ${cfg.phone ? `Si la question dépasse tes informations, si le prospect est frustré ou répète la même question deux fois sans satisfaction, réponds : "Pour ça, le mieux est d'appeler Benoît directement : ${cfg.phone}."` : 'Si la question dépasse tes informations ou si le prospect est frustré, invite-le à contacter Benoît directement.'}
