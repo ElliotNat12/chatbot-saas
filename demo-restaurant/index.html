@@ -35,22 +35,9 @@
     .menu-item-price { font-size: 14px; font-weight: 500; color: #2d5016; white-space: nowrap; }
     footer { background: var(--green); color: rgba(255,255,255,.6); text-align: center; padding: 2rem; font-size: 13px; }
     footer strong { color: rgba(255,255,255,.9); }
-    #api-banner { background: #1e1b4b; color: #c7d2fe; padding: 10px 20px; display: flex; align-items: center; gap: 12px; font-size: 13px; flex-wrap: wrap; }
-    #api-banner label { color: #a5b4fc; white-space: nowrap; }
-    #api-key-input { flex: 1; min-width: 200px; max-width: 340px; padding: 6px 10px; border-radius: 6px; border: 1px solid rgba(255,255,255,.2); background: rgba(255,255,255,.08); color: #fff; font-size: 12px; font-family: monospace; }
-    #api-apply { padding: 6px 16px; border-radius: 6px; background: #6366f1; color: #fff; border: none; cursor: pointer; font-size: 12px; font-weight: 500; }
-    .banner-status { font-size: 11px; color: #86efac; display: none; }
-    .banner-status.visible { display: block; }
   </style>
 </head>
 <body>
-  <div id="api-banner">
-    <label>🔑 Clé API Anthropic :</label>
-    <input type="password" id="api-key-input" placeholder="sk-ant-api03-..." autocomplete="off">
-    <button id="api-apply">Connecter</button>
-    <span class="banner-status" id="banner-status">✓ Chatbot activé — cliquez sur la bulle en bas à droite ↘</span>
-    <span style="margin-left:auto; color:rgba(255,255,255,.4); font-size:11px;">Clé non enregistrée, navigateur uniquement.</span>
-  </div>
   <nav>
     <span class="nav-logo">Le Petit Lilas</span>
     <ul class="nav-links">
@@ -89,28 +76,19 @@
 
   <script src="../widget/chatbot.js"></script>
   <script>
-    document.getElementById('api-apply').addEventListener('click', () => {
-      const key = document.getElementById('api-key-input').value.trim();
-      if (!key || !key.startsWith('sk-')) {
-        document.getElementById('api-key-input').style.borderColor = '#f87171';
-        setTimeout(() => document.getElementById('api-key-input').style.borderColor = '', 1500);
-        return;
-      }
-      const old = document.querySelector('[data-chatbot-saas]');
-      if (old) old.remove();
-      ChatbotSaaS.init({
-        apiKey: key,
-        botName: 'Lili',
-        avatar: '🌸',
-        businessName: 'Le Petit Lilas',
-        businessDescription: 'Restaurant français de quartier, cuisine maison et de saison.',
-        accentColor: '#7c3aed',
-        phone: '01 23 45 67 89',
-        phoneHours: 'du lundi au samedi, 10h–22h',
-        bookingUrl: 'https://lepetitlilas.fr/reservation',
-        greeting: 'Bonjour ! Je suis Lili, l\'assistante du Petit Lilas. Une question sur nos horaires, menus ou réservations ?',
-        suggestions: ['Vous êtes ouverts ce soir ?', 'C\'est combien le menu ?', 'Are you open for lunch?', 'Vous avez une terrasse ?', 'Comment réserver ?'],
-        faq: `Horaires : Lun-Sam 12h-14h30 et 19h-22h30. Fermé dimanche.
+    ChatbotSaaS.init({
+      apiEndpoint: '/api/chat',
+      botName: 'Lili',
+      avatar: '🌸',
+      businessName: 'Le Petit Lilas',
+      businessDescription: 'Restaurant français de quartier, cuisine maison et de saison.',
+      accentColor: '#7c3aed',
+      phone: '01 23 45 67 89',
+      phoneHours: 'du lundi au samedi, 10h–22h',
+      bookingUrl: 'https://lepetitlilas.fr/reservation',
+      greeting: 'Bonjour ! Je suis Lili, l\'assistante du Petit Lilas. Une question sur nos horaires, menus ou réservations ?',
+      suggestions: ['Vous êtes ouverts ce soir ?', 'C\'est combien le menu ?', 'Are you open for lunch?', 'Vous avez une terrasse ?', 'Comment réserver ?'],
+      faq: `Horaires : Lun-Sam 12h-14h30 et 19h-22h30. Fermé dimanche.
 Adresse : 12 rue des Lilas, Paris 11e. Métro Voltaire ligne 9.
 Parking : pas de parking dédié — parking Voltaire à 200m.
 Menus : Déjeuner 18€ (entrée+plat ou plat+dessert) ou 22€ (3 plats). Soir : entrées 8-14€, plats 18-26€, desserts 7-9€. Menu enfant 10€.
@@ -118,10 +96,8 @@ Réservation : en ligne sur lepetitlilas.fr/reservation ou par téléphone. Grou
 Terrasse : oui, cour intérieure chauffée, ~20 couverts. Animaux admis en terrasse uniquement.
 Allergènes : carte disponible sur demande. Options végétariennes chaque jour.
 Paiement : CB Visa Mastercard espèces. Pas de chèques. Wifi : non.`,
-        badgeDelay: 3000,
-        errorMessage: 'Je rencontre un problème technique. Appelez-nous au 01 23 45 67 89.',
-      });
-      document.getElementById('banner-status').classList.add('visible');
+      badgeDelay: 3000,
+      errorMessage: 'Je rencontre un problème technique. Appelez-nous au 01 23 45 67 89.',
     });
   </script>
 </body>

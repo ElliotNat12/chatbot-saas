@@ -230,14 +230,17 @@
 
     async function callClaude(userText) {
       history.push({ role: 'user', content: userText });
-      const res = await fetch('https://api.anthropic.com/v1/messages', {
+      const useProxy = !!cfg.apiEndpoint;
+      const url = useProxy ? cfg.apiEndpoint : 'https://api.anthropic.com/v1/messages';
+      const headers = { 'Content-Type': 'application/json' };
+      if (!useProxy) {
+        headers['x-api-key'] = cfg.apiKey;
+        headers['anthropic-version'] = '2023-06-01';
+        headers['anthropic-dangerous-direct-browser-access'] = 'true';
+      }
+      const res = await fetch(url, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-api-key': cfg.apiKey,
-          'anthropic-version': '2023-06-01',
-          'anthropic-dangerous-direct-browser-access': 'true'
-        },
+        headers,
         body: JSON.stringify({
           model: 'claude-haiku-4-5-20251001',
           max_tokens: 300,
