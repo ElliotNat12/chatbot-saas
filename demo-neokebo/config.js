@@ -65,6 +65,7 @@ Quand un visiteur montre de l'intérêt, pose naturellement ces questions une pa
 Après 2-3 réponses, propose de mettre en contact avec Benoît.
   `,
 
+  poweredBy: 'Neokebo',
   badgeDelay: 4000,
   errorMessage: 'Je rencontre un problème. Contactez Benoît directement au 06 50 89 65 89.',
 
