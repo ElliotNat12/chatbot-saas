@@ -192,7 +192,7 @@
     const badge      = document.getElementById('cb-badge');
     const suggestBox = document.getElementById('cb-suggestions');
 
-    let history = [], isOpen = false, isTyping = false, greeted = false;
+    let history = [], isOpen = false, isTyping = false, greeted = false, lead = {}, notifySent = false;
 
     function now() {
       return new Date().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
@@ -228,6 +228,28 @@
       });
     }
 
+    function parseNotify(text) {
+      const match = text.match(/\[NOTIFY:(\{[\s\S]*?\})\]/);
+      if (!match) return { clean: text, leadData: null };
+      try {
+        return { clean: text.replace(match[0], '').trim(), leadData: JSON.parse(match[1]) };
+      } catch (_) {
+        return { clean: text.replace(match[0], '').trim(), leadData: null };
+      }
+    }
+
+    async function sendNotify(payload) {
+      if (notifySent) return;
+      notifySent = true;
+      try {
+        await fetch('/api/notify', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+      } catch (_) {}
+    }
+
     async function callClaude(userText) {
       history.push({ role: 'user', content: userText });
       const useProxy = !!cfg.apiEndpoint;
@@ -243,16 +265,22 @@
         headers,
         body: JSON.stringify({
           model: 'claude-haiku-4-5-20251001',
-          max_tokens: 300,
+          max_tokens: 400,
           system: buildSystemPrompt(cfg),
           messages: history
         })
       });
       if (!res.ok) throw new Error('API error ' + res.status);
-      const data = await res.json();
-      const reply = data.content?.[0]?.text || '...';
-      history.push({ role: 'assistant', content: reply });
-      return reply;
+      const apiData = await res.json();
+      const rawReply = apiData.content?.[0]?.text || '...';
+      const { clean, leadData } = parseNotify(rawReply);
+      if (leadData && !notifySent) {
+        Object.assign(lead, leadData);
+        const resume = history.filter(m => m.role === 'user').map(m => m.content).join(' | ');
+        sendNotify({ ...lead, resume });
+      }
+      history.push({ role: 'assistant', content: clean });
+      return clean;
     }
 
     async function sendMsg(text) {
@@ -294,7 +322,7 @@
     if (cfg.badgeDelay !== false) setTimeout(() => { if (!isOpen) badge.classList.add('visible'); }, cfg.badgeDelay || 4000);
     if (cfg.autoOpen) setTimeout(openChat, cfg.autoOpen);
 
-    return { open: openChat, close: closeChat, reset: () => { history = []; greeted = false; } };
+    return { open: openChat, close: closeChat, reset: () => { history = []; greeted = false; lead = {}; notifySent = false; } };
   }
 
   function buildSystemPrompt(cfg) {
@@ -307,7 +335,7 @@ Détecte automatiquement la langue du visiteur et réponds dans cette même lang
 Ne signale pas ce changement — adapte-toi naturellement.
 
 ## CE QUE TU SAIS
-${cfg.faq}
+${cfg.faq || ''}
 
 ## RÈGLES
 - Réponses courtes : 1 à 3 phrases maximum
@@ -316,17 +344,46 @@ ${cfg.faq}
 - Si tu ne sais pas : dis-le honnêtement
 
 ## QUAND RENVOYER VERS LE TÉLÉPHONE
-Redirige vers ${cfg.phone} si :
+${cfg.phone ? `Redirige vers ${cfg.phone} si :
 - La question dépasse tes informations
 - Le client veut parler à quelqu'un
 - Le client semble frustré
 - Commande spéciale, groupe, réclamation, devis
 
-Formulation : "Pour ça, le mieux est de nous appeler : ${cfg.phone}. ${cfg.phoneHours ? `Disponibles ${cfg.phoneHours}.` : ''}"
+Formulation : "Pour ça, le mieux est de nous appeler : ${cfg.phone}. ${cfg.phoneHours ? `Disponibles ${cfg.phoneHours}.` : ''}"` : ''}
 
 ## CE QUE TU NE FAIS PAS
 - Prendre une réservation${cfg.bookingUrl ? ` (renvoie vers ${cfg.bookingUrl})` : ''}
-- Inventer des infos ou faire des promesses`;
+- Inventer des infos ou faire des promesses
+
+## QUALIFICATION DES LEADS
+
+### Scoring — évalue chaque visiteur en continu :
+- **froid** : curiosité générale, pas de projet concret, juste des questions basiques
+- **tiède** : intérêt réel, exploration active, question sur les prix ou les délais
+- **chaud** : projet concret, besoin identifié, prêt à être contacté ou à acheter
+
+### Collecte des coordonnées (leads chauds uniquement)
+Quand le lead est **chaud**, collecte naturellement et progressivement :
+1. Prénom ou nom
+2. Email
+3. Téléphone (optionnel)
+
+Ne demande jamais plusieurs infos à la fois. Intègre ces demandes naturellement dans la conversation, comme si tu voulais "passer le relais à l'équipe".
+
+Exemple : "Je peux faire en sorte que quelqu'un vous rappelle — vous avez un email ?"
+
+### Bloc NOTIFY — à inclure UNE SEULE FOIS dans ta réponse
+Dès que tu as le score ET au moins un email, ajoute ce bloc JSON à la FIN de ta réponse, sur une ligne séparée, sans espace autour :
+
+[NOTIFY:{"score":"chaud","nom":"Prénom Nom","email":"email@ex.com","tel":"+33600000000","projet":"description courte","budget":"budget estimé"}]
+
+Règles strictes :
+- N'inclus ce bloc qu'UNE SEULE FOIS dans toute la conversation
+- Remplace uniquement les valeurs, garde les clés exactement
+- Omets les champs que tu ne connais pas (sauf score et email)
+- Le bloc ne doit PAS apparaître dans ta réponse affichée au visiteur — il est invisible pour lui
+- Pour les leads froids ou tièdes sans email, n'inclus PAS le bloc`;
   }
 
   window.ChatbotSaaS = { init };
