@@ -284,11 +284,15 @@
     async function sendNotify(payload) {
       if (notifySent) return;
       notifySent = true;
+      const userTexts = history.filter(m => m.role === 'user').map(m => m.content).join(' ').toLowerCase();
+      const enWords = ['if', 'the', 'my', 'i', 'have', 'want', 'need', 'website', 'can', 'you'];
+      const enCount = enWords.filter(w => new RegExp('\\b' + w + '\\b').test(userTexts)).length;
+      const langue = enCount > 2 ? '🇬🇧 English' : '🇫🇷 Français';
       try {
         await fetch('/api/notify', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload)
+          body: JSON.stringify({ langue, ...payload })
         });
       } catch (_) {}
     }

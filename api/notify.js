@@ -73,7 +73,7 @@ module.exports = async function handler(req, res) {
   if (req.method === 'OPTIONS') return res.status(200).end();
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
-  const { nom, email, tel, projet, budget, resume, score } = req.body;
+  const { nom, email, tel, projet, budget, resume, score, langue } = req.body;
   const errors = [];
 
   // Email via Resend
@@ -128,6 +128,7 @@ module.exports = async function handler(req, res) {
       tel ? `📞 ${tel}` : null,
       projet ? `💼 ${projet}` : null,
       budget ? `💰 ${budget}` : null,
+      langue ? `🌐 ${langue}` : null,
       resumeIA ? `📝 ${resumeIA}` : null,
     ].filter(Boolean).join('\n');
 
