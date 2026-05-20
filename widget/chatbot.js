@@ -124,6 +124,32 @@
     #cb-send svg { width: 16px; height: 16px; fill: #fff; }
     #cb-powered { text-align: center; font-size: 10px; color: #cbd5e1; padding: 6px; background: #fff; font-family: var(--cb-font); }
     #cb-powered a { color: #94a3b8; text-decoration: none; }
+    .cb-lead-form {
+      background: #fff; border-radius: 4px 16px 16px 16px;
+      box-shadow: 0 1px 3px rgba(0,0,0,.06); padding: 14px 16px;
+      align-self: flex-start; max-width: 92%; width: 92%; animation: cb-pop .18s ease;
+    }
+    .cb-lead-form label {
+      display: block; font-size: 11.5px; font-weight: 500;
+      color: #64748b; margin-bottom: 3px; margin-top: 10px;
+    }
+    .cb-lead-form label:first-of-type { margin-top: 0; }
+    .cb-lead-form input {
+      width: 100%; border: 1px solid #e2e8f0; border-radius: 8px;
+      padding: 7px 10px; font-size: 13px; font-family: var(--cb-font);
+      color: #1a1a1a; outline: none; box-sizing: border-box; transition: border-color .15s;
+    }
+    .cb-lead-form input:focus { border-color: var(--cb-accent); }
+    .cb-lead-form .cb-tel-row { display: flex; gap: 6px; }
+    .cb-lead-form .cb-tel-prefix { width: 58px; flex-shrink: 0; text-align: center; }
+    .cb-lead-form .cb-tel-num { flex: 1; }
+    .cb-lead-form button[type="submit"] {
+      margin-top: 12px; width: 100%; padding: 9px;
+      background: var(--cb-accent); color: #fff; border: none;
+      border-radius: 10px; font-size: 13.5px; font-family: var(--cb-font);
+      font-weight: 500; cursor: pointer; transition: opacity .15s;
+    }
+    .cb-lead-form button[type="submit"]:hover { opacity: .88; }
     @media (max-width: 420px) {
       #cb-window { width: calc(100vw - 32px); right: 16px; bottom: 80px; }
       #cb-launcher { right: 16px; bottom: 16px; }
@@ -229,13 +255,22 @@
     }
 
     function parseNotify(text) {
-      const match = text.match(/\[NOTIFY:(\{[\s\S]*?\})\]/);
-      if (!match) return { clean: text, leadData: null };
-      try {
-        return { clean: text.replace(match[0], '').trim(), leadData: JSON.parse(match[1]) };
-      } catch (_) {
-        return { clean: text.replace(match[0], '').trim(), leadData: null };
+      let clean = text;
+      let leadData = null;
+      let showForm = false;
+
+      if (clean.includes('[SHOW_FORM]')) {
+        showForm = true;
+        clean = clean.replace('[SHOW_FORM]', '').trim();
       }
+
+      const match = clean.match(/\[NOTIFY:(\{[\s\S]*?\})\]/);
+      if (match) {
+        try { leadData = JSON.parse(match[1]); } catch (_) {}
+        clean = clean.replace(match[0], '').trim();
+      }
+
+      return { clean, leadData, showForm };
     }
 
     async function sendNotify(payload) {
@@ -273,14 +308,14 @@
       if (!res.ok) throw new Error('API error ' + res.status);
       const apiData = await res.json();
       const rawReply = apiData.content?.[0]?.text || '...';
-      const { clean, leadData } = parseNotify(rawReply);
+      const { clean, leadData, showForm } = parseNotify(rawReply);
       if (leadData && !notifySent) {
         Object.assign(lead, leadData);
         const resume = history.filter(m => m.role === 'user').map(m => m.content).join(' | ');
         sendNotify({ ...lead, resume });
       }
       history.push({ role: 'assistant', content: clean });
-      return clean;
+      return { text: clean, showForm };
     }
 
     async function sendMsg(text) {
@@ -290,14 +325,49 @@
       inputEl.value = ''; inputEl.style.height = 'auto';
       isTyping = true; sendBtn.disabled = true; showTyping();
       try {
-        const reply = await callClaude(text);
+        const { text: reply, showForm } = await callClaude(text);
         removeTyping(); addMsg(reply, 'bot');
+        if (showForm) showLeadForm();
       } catch (e) {
         removeTyping();
         addMsg(cfg.errorMessage || 'Désolé, une erreur s\'est produite.', 'bot');
       } finally {
         isTyping = false; sendBtn.disabled = false; inputEl.focus();
       }
+    }
+
+    function showLeadForm() {
+      if (document.getElementById('cb-lead-form')) return;
+      const form = document.createElement('form');
+      form.id = 'cb-lead-form';
+      form.className = 'cb-lead-form';
+      form.innerHTML = `
+        <label>Prénom &amp; Nom</label>
+        <input type="text" name="nom" placeholder="Jean Dupont" autocomplete="name" required />
+        <label>Email</label>
+        <input type="email" name="email" placeholder="jean@exemple.com" autocomplete="email" required />
+        <label>Téléphone</label>
+        <div class="cb-tel-row">
+          <input type="text" name="tel_prefix" class="cb-tel-prefix" value="+33" />
+          <input type="tel" name="tel_num" class="cb-tel-num" placeholder="6 12 34 56 78" autocomplete="tel" />
+        </div>
+        <button type="submit">Envoyer</button>
+      `;
+      form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const fd = new FormData(form);
+        const nom = fd.get('nom').trim();
+        const email = fd.get('email').trim();
+        const prefix = (fd.get('tel_prefix') || '').trim();
+        const telNum = (fd.get('tel_num') || '').trim();
+        const tel = telNum ? prefix + ' ' + telNum : '';
+        const resume = history.filter(m => m.role === 'user').map(m => m.content).join(' | ');
+        form.remove();
+        await sendNotify({ score: 'chaud', nom, email, tel, resume });
+        addMsg('Merci ! Un membre de notre équipe vous contactera très bientôt.', 'bot');
+      });
+      messages.appendChild(form);
+      messages.scrollTop = messages.scrollHeight;
     }
 
     function openChat() {
@@ -363,27 +433,18 @@ Formulation : "Pour ça, le mieux est de nous appeler : ${cfg.phone}. ${cfg.phon
 - **tiède** : intérêt réel, exploration active, question sur les prix ou les délais
 - **chaud** : projet concret, besoin identifié, prêt à être contacté ou à acheter
 
-### Collecte des coordonnées (leads chauds uniquement)
-Quand le lead est **chaud**, collecte naturellement et progressivement :
-1. Prénom ou nom
-2. Email
-3. Téléphone (optionnel)
+### Formulaire de contact (leads chauds uniquement)
+Quand le lead est **chaud** (projet concret, besoin identifié, prêt à être contacté), annonce que tu vas passer le relais à l'équipe, puis émets [SHOW_FORM] à la fin de ta réponse sur une ligne séparée :
 
-Ne demande jamais plusieurs infos à la fois. Intègre ces demandes naturellement dans la conversation, comme si tu voulais "passer le relais à l'équipe".
-
-Exemple : "Je peux faire en sorte que quelqu'un vous rappelle — vous avez un email ?"
-
-### Bloc NOTIFY — à inclure UNE SEULE FOIS dans ta réponse
-Dès que tu as le score ET au moins un email, ajoute ce bloc JSON à la FIN de ta réponse, sur une ligne séparée, sans espace autour :
-
-[NOTIFY:{"score":"chaud","nom":"Prénom Nom","email":"email@ex.com","tel":"+33600000000","projet":"description courte","budget":"budget estimé"}]
+Exemple :
+"Parfait, je vais faire en sorte qu'un membre de l'équipe vous contacte rapidement !
+[SHOW_FORM]"
 
 Règles strictes :
-- N'inclus ce bloc qu'UNE SEULE FOIS dans toute la conversation
-- Remplace uniquement les valeurs, garde les clés exactement
-- Omets les champs que tu ne connais pas (sauf score et email)
-- Le bloc ne doit PAS apparaître dans ta réponse affichée au visiteur — il est invisible pour lui
-- Pour les leads froids ou tièdes sans email, n'inclus PAS le bloc`;
+- N'émets [SHOW_FORM] qu'UNE SEULE FOIS dans toute la conversation
+- [SHOW_FORM] ne doit PAS apparaître dans le texte visible — c'est un tag invisible
+- Ne demande PAS les coordonnées toi-même — le formulaire s'en charge
+- Pour les leads froids ou tièdes, n'émets PAS [SHOW_FORM]`;
   }
 
   window.ChatbotSaaS = { init };
