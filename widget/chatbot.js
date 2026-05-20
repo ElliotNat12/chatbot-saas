@@ -57,6 +57,10 @@
     #cb-header-name { font-weight: 600; font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     #cb-header-status { font-size: 11px; opacity: .8; display: flex; align-items: center; gap: 4px; }
     #cb-header-status::before { content:''; width: 6px; height: 6px; border-radius: 50%; background: #4ade80; display: inline-block; }
+    #cb-lang-selector { display: flex; gap: 3px; align-items: center; margin-right: 4px; }
+    .cb-lang-btn { background: none; border: none; cursor: pointer; font-size: 15px; opacity: .5; padding: 2px; line-height: 1; transition: opacity .15s; }
+    .cb-lang-btn:hover { opacity: .8; }
+    .cb-lang-btn.active { opacity: 1; }
     #cb-close-btn { background: none; border: none; color: rgba(255,255,255,.7); cursor: pointer; font-size: 20px; padding: 2px; line-height: 1; transition: color .15s; }
     #cb-close-btn:hover { color: #fff; }
     #cb-messages {
@@ -169,6 +173,10 @@
           <div id="cb-header-info">
             <div id="cb-header-name">${cfg.botName}</div>
             <div id="cb-header-status">${cfg.headerStatus || 'En ligne'}</div>
+          </div>
+          <div id="cb-lang-selector">
+            <button class="cb-lang-btn active" data-lang="fr" title="Français">🇫🇷</button>
+            <button class="cb-lang-btn" data-lang="en" title="English">🇬🇧</button>
           </div>
           <button id="cb-close-btn" aria-label="Fermer">✕</button>
         </div>
@@ -349,6 +357,20 @@
       }
     }
 
+    async function sendSilentMsg(text) {
+      if (isTyping) return;
+      isTyping = true; sendBtn.disabled = true; showTyping();
+      try {
+        const { text: reply, showForm } = await callClaude(text);
+        removeTyping(); addMsg(reply, 'bot');
+        if (showForm) showLeadForm();
+      } catch (_) {
+        removeTyping();
+      } finally {
+        isTyping = false; sendBtn.disabled = false;
+      }
+    }
+
     function showLeadForm() {
       const existing = document.getElementById('cb-lead-form');
       if (existing) existing.remove();
@@ -403,6 +425,21 @@
     inputEl.addEventListener('keydown', e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMsg(inputEl.value); } });
     inputEl.addEventListener('input', () => { inputEl.style.height = 'auto'; inputEl.style.height = Math.min(inputEl.scrollHeight, 100) + 'px'; });
 
+    document.querySelectorAll('.cb-lang-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.cb-lang-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        const lang = btn.dataset.lang;
+        if (lang === 'en') {
+          inputEl.placeholder = 'Your message...';
+          if (greeted) sendSilentMsg('Please continue in English for the rest of our conversation.');
+        } else {
+          inputEl.placeholder = 'Votre message...';
+          if (greeted) sendSilentMsg('Continuez en français pour la suite de notre échange.');
+        }
+      });
+    });
+
     if (cfg.badgeDelay !== false) setTimeout(() => { if (!isOpen) badge.classList.add('visible'); }, cfg.badgeDelay || 4000);
     if (cfg.autoOpen) setTimeout(openChat, cfg.autoOpen);
 
@@ -417,7 +454,12 @@ ${cfg.businessDescription || ''}
 Tu es un filtre de qualification, pas un commercial. Ton rôle est d'identifier si le projet est concret, puis de passer la main à Benoît. Tu ne cherches pas à convaincre ni à vendre.
 
 ## LANGUE
-Détecte automatiquement la langue du visiteur et réponds dans cette même langue, sans le signaler.
+Dès le premier message du visiteur, détecte sa langue et réponds dans cette même langue pour toute la suite de la conversation, sans jamais le signaler.
+Règles absolues :
+- Si le visiteur écrit en anglais, réponds en anglais. Si en espagnol, en espagnol. Etc.
+- Ne réponds JAMAIS en français si le visiteur écrit dans une autre langue.
+- Si le visiteur change de langue en cours de conversation, suis immédiatement ce changement.
+- Adapte également le texte du formulaire de contact et le message de confirmation ("Thank you, a member of our team will contact you shortly." si anglais, etc.) à la langue détectée.
 
 ## CE QUE TU SAIS
 ${cfg.faq || ''}
