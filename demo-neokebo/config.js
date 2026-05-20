@@ -21,6 +21,14 @@ ChatbotSaaS.init({apiEndpoint: '/api/chat',
     'Prendre contact avec Benoît',
   ],
 
+  suggestionsEn: [
+    'How much does a website cost?',
+    'What exactly do you do?',
+    'I have a restaurant, can you help?',
+    'How long does it take?',
+    'Get in touch with Benoît',
+  ],
+
   faq: `
 Neokebo est une agence web créée par Benoît, spécialisée dans la création de sites web pour les restaurateurs, PME, artisans et entreprises du BTP.
 

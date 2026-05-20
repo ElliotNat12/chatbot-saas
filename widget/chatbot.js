@@ -432,9 +432,11 @@
         const lang = btn.dataset.lang;
         if (lang === 'en') {
           inputEl.placeholder = 'Your message...';
+          if (cfg.suggestionsEn?.length) showSuggestions(cfg.suggestionsEn); else clearSuggestions();
           if (greeted) sendSilentMsg('Please continue in English for the rest of our conversation.');
         } else {
           inputEl.placeholder = 'Votre message...';
+          if (cfg.suggestions?.length) showSuggestions(cfg.suggestions); else clearSuggestions();
           if (greeted) sendSilentMsg('Continuez en français pour la suite de notre échange.');
         }
       });
