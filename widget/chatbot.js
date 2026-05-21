@@ -73,7 +73,7 @@
     #cb-messages {
       flex: 1; overflow-y: auto; padding: 16px;
       display: flex; flex-direction: column; gap: 10px;
-      background: #f8f9fb; scroll-behavior: smooth;
+      background: #f8f9fb; scroll-behavior: smooth; overscroll-behavior: contain;
     }
     #cb-messages::-webkit-scrollbar { width: 4px; }
     #cb-messages::-webkit-scrollbar-thumb { background: #ddd; border-radius: 4px; }
@@ -462,6 +462,11 @@
     inputEl.addEventListener('keydown', e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMsg(inputEl.value); } });
     inputEl.addEventListener('input', () => { inputEl.style.height = 'auto'; inputEl.style.height = Math.min(inputEl.scrollHeight, 100) + 'px'; });
     inputEl.addEventListener('focus', () => { if (window.innerWidth <= 480) setTimeout(() => { messages.scrollTop = messages.scrollHeight; }, 100); });
+    messages.addEventListener('wheel', e => {
+      const atTop = e.deltaY < 0 && messages.scrollTop === 0;
+      const atBottom = e.deltaY > 0 && messages.scrollTop + messages.clientHeight >= messages.scrollHeight;
+      if (atTop || atBottom) e.stopPropagation();
+    });
 
     document.querySelectorAll('.cb-lang-btn').forEach(btn => {
       btn.addEventListener('click', () => {
