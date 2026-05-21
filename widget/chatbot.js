@@ -53,6 +53,13 @@
       background: rgba(255,255,255,.2); display: flex;
       align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0;
     }
+    @keyframes cb-pulse-green {
+      0%   { box-shadow: 0 0 0 0px rgba(74,222,128,0.7); }
+      70%  { box-shadow: 0 0 0 8px transparent; }
+      100% { box-shadow: 0 0 0 0px transparent; }
+    }
+    .cb-avatar-thinking { animation: cb-pulse-green 1.5s infinite; }
+    .cb-close-inline { display: none; }
     #cb-header-info { flex: 1; min-width: 0; }
     #cb-header-name { font-weight: 600; font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     #cb-header-status { font-size: 11px; opacity: .8; display: flex; align-items: center; gap: 4px; }
@@ -163,6 +170,15 @@
       #cb-launcher.open { display: none; }
       #cb-messages { justify-content: flex-end; }
       #cb-input { font-size: 16px; }
+      #cb-close-btn {
+        font-size: 22px; background: rgba(255,255,255,0.2); border-radius: 50%;
+        width: 34px; height: 34px; display: flex; align-items: center; justify-content: center;
+      }
+      .cb-close-inline {
+        display: flex; align-items: center; font-size: 12px; color: #64748b;
+        background: none; border: none; padding: 6px 8px; cursor: pointer;
+        white-space: nowrap; flex-shrink: 0;
+      }
     }
   `;
 
@@ -189,6 +205,7 @@
         <div id="cb-messages"></div>
         <div id="cb-suggestions"></div>
         <div id="cb-input-area">
+          <button class="cb-close-inline" id="cb-close-inline">✕ Fermer</button>
           <textarea id="cb-input" placeholder="${cfg.placeholder || 'Votre message...'}" rows="1"></textarea>
           <button id="cb-send" aria-label="Envoyer">
             <svg viewBox="0 0 24 24"><path d="M22 2L11 13M22 2L15 22l-4-9-9-4 20-7z"/></svg>
@@ -256,8 +273,14 @@
       d.innerHTML = '<span></span><span></span><span></span>';
       messages.appendChild(d);
       messages.scrollTop = messages.scrollHeight;
+      const av = document.getElementById('cb-avatar');
+      if (av) av.classList.add('cb-avatar-thinking');
     }
-    function removeTyping() { const t = document.getElementById('cb-typing'); if (t) t.remove(); }
+    function removeTyping() {
+      const t = document.getElementById('cb-typing'); if (t) t.remove();
+      const av = document.getElementById('cb-avatar');
+      if (av) av.classList.remove('cb-avatar-thinking');
+    }
     function clearSuggestions() { suggestBox.innerHTML = ''; }
     function showSuggestions(chips) {
       clearSuggestions();
@@ -433,6 +456,8 @@
 
     launcher.addEventListener('click', () => isOpen ? closeChat() : openChat());
     closeBtn.addEventListener('click', closeChat);
+    const closeInlineBtn = document.getElementById('cb-close-inline');
+    if (closeInlineBtn) closeInlineBtn.addEventListener('click', closeChat);
     sendBtn.addEventListener('click', () => sendMsg(inputEl.value));
     inputEl.addEventListener('keydown', e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMsg(inputEl.value); } });
     inputEl.addEventListener('input', () => { inputEl.style.height = 'auto'; inputEl.style.height = Math.min(inputEl.scrollHeight, 100) + 'px'; });
