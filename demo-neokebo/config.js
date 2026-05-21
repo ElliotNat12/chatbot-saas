@@ -1,7 +1,8 @@
 ChatbotSaaS.init({apiEndpoint: '/api/chat',
 
   botName: 'Néo',
-  avatar: '💻',
+  avatar: null,
+  avatarImg: 'logo.png',
   businessName: 'Neokebo',
   businessDescription: 'Agence web spécialisée dans la création de sites pour restaurateurs et PME.',
 

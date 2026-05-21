@@ -169,7 +169,7 @@
       </button>
       <div id="cb-window" role="dialog" aria-label="Chat ${cfg.botName}">
         <div id="cb-header">
-          <div id="cb-avatar">${cfg.avatar || '💬'}</div>
+          <div id="cb-avatar">${cfg.avatarImg ? `<img src="${cfg.avatarImg}" style="width:100%;height:100%;object-fit:cover;border-radius:50%">` : (cfg.avatar || '💬')}</div>
           <div id="cb-header-info">
             <div id="cb-header-name">${cfg.botName}</div>
             <div id="cb-header-status">${cfg.headerStatus || 'En ligne'}</div>
