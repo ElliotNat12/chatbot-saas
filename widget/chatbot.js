@@ -157,7 +157,7 @@
     @media (max-width: 480px) {
       #cb-window {
         position: fixed; top: 0; left: 0; right: 0; bottom: 0;
-        width: 100%; max-height: 100%; height: 100dvh; border-radius: 0;
+        width: 100%; max-height: 100dvh; height: 100dvh; border-radius: 0;
       }
       #cb-launcher { right: 16px; bottom: 16px; z-index: 10000; }
       #cb-launcher.open { display: none; }
