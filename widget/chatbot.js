@@ -463,6 +463,7 @@
     inputEl.addEventListener('input', () => { inputEl.style.height = 'auto'; inputEl.style.height = Math.min(inputEl.scrollHeight, 100) + 'px'; });
     inputEl.addEventListener('focus', () => { if (window.innerWidth <= 480) setTimeout(() => { messages.scrollTop = messages.scrollHeight; }, 100); });
     win.addEventListener('wheel', (e) => {
+      if (!isOpen) return;
       const inMessages = messages.contains(e.target) || e.target === messages;
       if (inMessages) {
         const atTop = e.deltaY < 0 && messages.scrollTop === 0;
@@ -475,6 +476,7 @@
     let touchStartY = 0;
     win.addEventListener('touchstart', (e) => { touchStartY = e.touches[0].clientY; }, { passive: true });
     win.addEventListener('touchmove', (e) => {
+      if (!isOpen) return;
       const inMessages = messages.contains(e.target) || e.target === messages;
       const deltaY = touchStartY - e.touches[0].clientY;
       if (inMessages) {
