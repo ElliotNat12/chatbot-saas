@@ -160,6 +160,8 @@
         width: 100%; max-height: 100%; height: 100dvh; border-radius: 0;
       }
       #cb-launcher { right: 16px; bottom: 16px; z-index: 10000; }
+      #cb-launcher.open { display: none; }
+      #cb-messages { justify-content: flex-end; }
       #cb-input { font-size: 16px; }
     }
   `;
@@ -246,6 +248,7 @@
       time.textContent = now();
       messages.appendChild(time);
       messages.scrollTop = messages.scrollHeight;
+      time.scrollIntoView({ block: 'end' });
     }
     function showTyping() {
       const d = document.createElement('div');
@@ -433,6 +436,7 @@
     sendBtn.addEventListener('click', () => sendMsg(inputEl.value));
     inputEl.addEventListener('keydown', e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMsg(inputEl.value); } });
     inputEl.addEventListener('input', () => { inputEl.style.height = 'auto'; inputEl.style.height = Math.min(inputEl.scrollHeight, 100) + 'px'; });
+    inputEl.addEventListener('focus', () => { if (window.innerWidth <= 480) setTimeout(() => { messages.scrollTop = messages.scrollHeight; }, 100); });
 
     document.querySelectorAll('.cb-lang-btn').forEach(btn => {
       btn.addEventListener('click', () => {
