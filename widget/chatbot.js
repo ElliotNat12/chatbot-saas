@@ -154,9 +154,13 @@
       font-weight: 500; cursor: pointer; transition: opacity .15s;
     }
     .cb-lead-form button[type="submit"]:hover { opacity: .88; }
-    @media (max-width: 420px) {
-      #cb-window { width: calc(100vw - 32px); right: 16px; bottom: 80px; }
-      #cb-launcher { right: 16px; bottom: 16px; }
+    @media (max-width: 480px) {
+      #cb-window {
+        position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+        width: 100%; max-height: 100%; height: 100dvh; border-radius: 0;
+      }
+      #cb-launcher { right: 16px; bottom: 16px; z-index: 10000; }
+      #cb-input { font-size: 16px; }
     }
   `;
 
@@ -413,6 +417,7 @@
     function openChat() {
       isOpen = true; win.classList.add('open'); launcher.classList.add('open');
       badge.classList.remove('visible'); inputEl.focus();
+      if (window.innerWidth <= 480) document.body.style.overflow = 'hidden';
       if (!greeted) {
         greeted = true;
         setTimeout(() => {
@@ -421,7 +426,7 @@
         }, 300);
       }
     }
-    function closeChat() { isOpen = false; win.classList.remove('open'); launcher.classList.remove('open'); }
+    function closeChat() { isOpen = false; win.classList.remove('open'); launcher.classList.remove('open'); document.body.style.overflow = ''; }
 
     launcher.addEventListener('click', () => isOpen ? closeChat() : openChat());
     closeBtn.addEventListener('click', closeChat);
