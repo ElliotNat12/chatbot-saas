@@ -65,7 +65,7 @@
     #cb-header-status { font-size: 11px; opacity: .8; display: flex; align-items: center; gap: 4px; }
     #cb-header-status::before { content:''; width: 6px; height: 6px; border-radius: 50%; background: #4ade80; display: inline-block; }
     #cb-lang-selector { display: flex; gap: 3px; align-items: center; margin-right: 4px; }
-    .cb-lang-btn { background: none; border: none; cursor: pointer; font-size: 15px; opacity: .5; padding: 2px; line-height: 1; transition: opacity .15s; }
+    .cb-lang-btn { background: none; border: none; cursor: pointer; font-size: 22px; opacity: .5; padding: 4px; line-height: 1; transition: opacity .15s; }
     .cb-lang-btn:hover { opacity: .8; }
     .cb-lang-btn.active { opacity: 1; }
     #cb-close-btn { background: none; border: none; color: rgba(255,255,255,.7); cursor: pointer; font-size: 20px; padding: 2px; line-height: 1; transition: color .15s; }
