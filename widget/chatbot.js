@@ -462,11 +462,19 @@
     inputEl.addEventListener('keydown', e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMsg(inputEl.value); } });
     inputEl.addEventListener('input', () => { inputEl.style.height = 'auto'; inputEl.style.height = Math.min(inputEl.scrollHeight, 100) + 'px'; });
     inputEl.addEventListener('focus', () => { if (window.innerWidth <= 480) setTimeout(() => { messages.scrollTop = messages.scrollHeight; }, 100); });
-    messages.addEventListener('wheel', e => {
+    messages.addEventListener('wheel', (e) => {
       const atTop = e.deltaY < 0 && messages.scrollTop === 0;
       const atBottom = e.deltaY > 0 && messages.scrollTop + messages.clientHeight >= messages.scrollHeight;
-      if (atTop || atBottom) e.stopPropagation();
-    });
+      if (atTop || atBottom) e.preventDefault();
+    }, { passive: false });
+    let touchStartY = 0;
+    messages.addEventListener('touchstart', (e) => { touchStartY = e.touches[0].clientY; }, { passive: true });
+    messages.addEventListener('touchmove', (e) => {
+      const deltaY = touchStartY - e.touches[0].clientY;
+      const atTop = deltaY < 0 && messages.scrollTop === 0;
+      const atBottom = deltaY > 0 && messages.scrollTop + messages.clientHeight >= messages.scrollHeight;
+      if (atTop || atBottom) e.preventDefault();
+    }, { passive: false });
 
     document.querySelectorAll('.cb-lang-btn').forEach(btn => {
       btn.addEventListener('click', () => {
