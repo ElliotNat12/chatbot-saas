@@ -180,6 +180,22 @@
         white-space: nowrap; flex-shrink: 0;
       }
     }
+    @media (prefers-color-scheme: dark) {
+      #cb-window { background: #1e1e2e; }
+      #cb-messages { background: #16162a; }
+      .cb-msg.bot { background: #2a2a3e; color: #e2e8f0; box-shadow: 0 1px 3px rgba(0,0,0,.3); }
+      .cb-msg.escalate { background: #2d1f00; border-color: #92400e; color: #fcd34d; }
+      .cb-msg-time { color: #64748b; }
+      #cb-input-area { background: #1e1e2e; border-top-color: #2a2a3e; }
+      #cb-input { background: #2a2a3e; border-color: #3a3a5c; color: #e2e8f0; }
+      #cb-input::placeholder { color: #4a4a6a; }
+      #cb-suggestions { background: #16162a; }
+      .cb-chip { background: #2a2a3e; border-color: #3a3a5c; color: #94a3b8; }
+      #cb-powered { background: #1e1e2e; color: #4a4a6a; }
+      .cb-lead-form { background: #2a2a3e; }
+      .cb-lead-form input { background: #1e1e2e; border-color: #3a3a5c; color: #e2e8f0; }
+      .cb-lead-form label { color: #94a3b8; }
+    }
   `;
 
   function buildHTML(cfg) {
