@@ -64,7 +64,6 @@ module.exports = async function handler(req, res) {
       if (pollData.status === 'failed') {
         return res.status(502).json({ error: 'Firecrawl crawl failed', detail: pollData.error || '' });
       }
-      // status === 'scraping' or 'crawling' → keep polling
     }
 
     // 3. Concatenate all page markdowns
@@ -81,6 +80,27 @@ module.exports = async function handler(req, res) {
       return res.status(504).json({ error: 'Timeout before Claude call' });
     }
 
+    const userPrompt = `Voici le contenu crawle d'un site web professionnel. Reponds UNIQUEMENT en francais.
+
+Ta reponse doit commencer IMMEDIATEMENT par exactement ces 3 lignes, sans aucun texte avant :
+
+ENTREPRISE: [nom exact tel qu'il apparait sur le site]
+COULEUR: #[6 chiffres hex — couleur dominante boutons/header/logo. Si inconnue : restaurant=#8B4513, nature/outdoor=#4a5e3a, tech=#2563eb, beaute=#c0847a, sante=#2e8b7a, commerce=#c0392b]
+EMOJI: [UN SEUL emoji unicode, rien d'autre sur cette ligne : restaurant/cafe=🍽️, sport/fitness=💪, aventure/militaire/vehicule=🪖, beaute/spa=💆, tech/web=💻, boutique=🛍️, sante=🏥, immobilier=🏠, education=📚, voyage=✈️, autre=💬]
+
+Puis ces sections en francais (omets si absent) :
+
+CONTACT : telephone, email, adresse, lien de reservation
+SERVICES : liste des prestations
+TARIFS : prix par formule
+HORAIRES : jours et heures
+CONDITIONS : restrictions, prerequis
+FAQ : questions frequentes
+
+Maximum 600 mots hors les 3 premieres lignes. Texte plain sans markdown.
+
+${markdown}`;
+
     const claudeRes = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: {
@@ -92,29 +112,8 @@ module.exports = async function handler(req, res) {
         model: 'claude-haiku-4-5-20251001',
         max_tokens: 1000,
         messages: [
-          {
-            role: 'user',
-            content: `Voici le contenu crawlé d'un site web professionnel (plusieurs pages). Réponds TOUJOURS en français, quelle que soit la langue du site.
-
-Retourne un texte plain (sans markdown, sans astérisques, sans caractères spéciaux) structuré EXACTEMENT ainsi, dans cet ordre :
-
-ENTREPRISE: [nom exact de l'entreprise tel qu'il apparaît sur le site]
-COULEUR: [couleur principale dominante du site — boutons, header ou logo — en format #rrggbb. Si inconnue, déduis-la du secteur : restaurant → #8B4513, nature/outdoor → #4a5e3a, tech → #2563eb, etc.]
-EMOJI: [un seul emoji représentant le type de business : restaurant/café → 🍽️, sport/coach/fitness → 💪, véhicule/aventure/militaire → 🪖, beauté/spa/bien-être → 💆, tech/web/digital → 💻, commerce/boutique → 🛍️, santé/médical → 🏥, immobilier → 🏠, éducation/formation → 📚, voyage/tourisme → ✈️, autre → 💬]
-
-Puis ces sections (omets une section si l'info est absente) :
-
-CONTACT : téléphone, email, adresse, lien de réservation
-SERVICES : liste des services ou prestations proposés
-TARIFS : prix par service ou formule
-HORAIRES : jours et heures d'ouverture
-CONDITIONS : conditions d'accès, restrictions, prérequis
-FAQ : questions/réponses fréquentes si présentes
-
-Maximum 600 mots au total. Sois concis et factuel.
-
-${markdown}`
-          }
+          { role: 'user', content: userPrompt },
+          { role: 'assistant', content: 'ENTREPRISE:' }
         ]
       })
     });
@@ -125,7 +124,9 @@ ${markdown}`
     }
 
     const claudeData = await claudeRes.json();
-    const faq = claudeData?.content?.[0]?.text || '';
+    // Prepend the assistant prefill that Claude continued from
+    const rawText = claudeData?.content?.[0]?.text || '';
+    const faq = 'ENTREPRISE:' + rawText;
 
     return res.status(200).json({ faq });
 

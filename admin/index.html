@@ -271,10 +271,11 @@
       document.getElementById('accentColorPicker').value = hex;
     }
 
-    // Emoji: "EMOJI: 🍽️"
-    const emojiMatch = faq.match(/^EMOJI\s*:\s*(\S+)/im);
-    if (emojiMatch) {
-      document.getElementById('avatar').value = emojiMatch[1].trim();
+    // Emoji: "EMOJI: 🍽️" — extract first pictographic emoji on the line
+    const emojiLineMatch = faq.match(/^EMOJI\s*:\s*(.+)/im);
+    if (emojiLineMatch) {
+      const emojiChar = emojiLineMatch[1].trim().match(/\p{Extended_Pictographic}/u);
+      if (emojiChar) document.getElementById('avatar').value = emojiChar[0];
     }
 
     if (detectedName) {
