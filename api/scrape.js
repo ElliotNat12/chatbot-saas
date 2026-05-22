@@ -94,7 +94,14 @@ module.exports = async function handler(req, res) {
         messages: [
           {
             role: 'user',
-            content: `Voici le contenu crawlé d'un site web professionnel (plusieurs pages). Extrais uniquement les informations utiles pour configurer un chatbot et structure-les en sections. Retourne un texte plain (sans markdown, sans caractères spéciaux), avec exactement ces sections dans cet ordre (omets une section si l'info est absente) :
+            content: `Voici le contenu crawlé d'un site web professionnel (plusieurs pages). Réponds TOUJOURS en français, quelle que soit la langue du site.
+
+Retourne un texte plain (sans markdown, sans astérisques, sans caractères spéciaux) structuré EXACTEMENT ainsi, dans cet ordre :
+
+ENTREPRISE: [nom exact de l'entreprise tel qu'il apparaît sur le site]
+COULEUR: [couleur principale dominante du site — boutons, header ou logo — en format #rrggbb. Si inconnue, déduis-la du secteur : restaurant → #8B4513, nature/outdoor → #4a5e3a, tech → #2563eb, etc.]
+
+Puis ces sections (omets une section si l'info est absente) :
 
 CONTACT : téléphone, email, adresse, lien de réservation
 SERVICES : liste des services ou prestations proposés
