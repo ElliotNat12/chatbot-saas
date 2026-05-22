@@ -173,6 +173,18 @@
     .q-response.visible { display: block; }
 
     .faq-editor-row { display: flex; gap: .5rem; align-items: flex-start; justify-content: space-between; margin-bottom: .5rem; }
+
+    .sug-card { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: .875rem 1rem; margin-bottom: .625rem; border-left: 3px solid var(--muted); transition: opacity .3s; }
+    .sug-card.pending { border-left-color: #f59e0b; }
+    .sug-card.approved { border-left-color: #16a34a; }
+    .sug-card.rejected { border-left-color: #dc2626; }
+    .sug-card.modified { border-left-color: #2563eb; }
+    .sug-title { font-size: 13.5px; font-weight: 600; margin-bottom: .3rem; }
+    .sug-source { font-size: 12px; color: var(--muted); font-style: italic; margin-bottom: .6rem; }
+    .sug-textarea { width: 100%; background: var(--surface2); border: 1px solid var(--border); border-radius: 6px; padding: .5rem .75rem; font-size: 12.5px; color: var(--text); resize: vertical; min-height: 72px; margin-bottom: .6rem; font-family: inherit; }
+    .sug-actions { display: flex; gap: .4rem; flex-wrap: wrap; }
+    .badge-count { display: inline-block; background: #f59e0b; color: #fff; font-size: 11px; font-weight: 700; border-radius: 999px; padding: 0 6px; min-width: 20px; text-align: center; margin-left: .25rem; }
+
     .iframe-wrap { border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; margin-top: .75rem; }
     .iframe-wrap iframe { display: block; width: 100%; height: 580px; border: none; }
     .iframe-toolbar { display: flex; align-items: center; justify-content: space-between; padding: .5rem .75rem; background: var(--surface2); border-bottom: 1px solid var(--border); font-size: 12px; color: var(--muted); }
@@ -390,6 +402,25 @@
 
       <hr class="sep">
 
+      <!-- BLOC B2 — Suggestions d'amélioration FAQ -->
+      <div class="faq-editor-row" style="align-items:center">
+        <div class="bloc-title">Suggestions d'amélioration <span class="badge-count" id="sug-pending-badge">0</span></div>
+        <div style="display:flex;gap:.5rem">
+          <button class="btn btn-secondary btn-sm" onclick="generateSuggestionsForClient()">Générer maintenant</button>
+          <button class="btn btn-primary btn-sm" onclick="approveAllSuggestions()">Tout approuver</button>
+        </div>
+      </div>
+      <div id="sug-loader" style="display:none;font-size:13px;color:var(--muted);padding:.4rem 0;display:none">
+        <span class="spinner"></span> Claude analyse les conversations…
+      </div>
+      <div id="sug-pending-list"><div style="font-size:13px;color:var(--muted)">Sélectionnez un client pour voir ses suggestions.</div></div>
+      <details style="margin-top:.75rem">
+        <summary style="font-size:12px;color:var(--muted);cursor:pointer;user-select:none">Historique de la semaine</summary>
+        <div id="sug-history-list" style="margin-top:.75rem"></div>
+      </details>
+
+      <hr class="sep">
+
       <!-- BLOC C — Éditeur FAQ -->
       <div class="faq-editor-row">
         <div class="bloc-title">Éditeur FAQ</div>
@@ -471,6 +502,7 @@ const S = {
   globalLoaded: false,
   crmLoaded: false,
   testerSlug: null,
+  testerBusinessName: null,
   draggedId: null,
   notesTimers: {}
 };
@@ -897,6 +929,7 @@ async function onClientSelect(slug) {
   // Load stats + FAQ in parallel
   const client = S.clients.find(c => c.slug === slug);
   const businessName = client?.name || slug;
+  S.testerBusinessName = businessName;
 
   try {
     const [statsRes, faqRes] = await Promise.all([
@@ -916,6 +949,7 @@ async function onClientSelect(slug) {
   } catch {}
 
   document.getElementById('tester-loading').style.display = 'none';
+  loadSuggestions(slug);
 }
 
 function renderTesterStats(stats) {
@@ -1019,6 +1053,129 @@ async function saveFaqForClient() {
 function reloadIframe() {
   const iframe = document.getElementById('t-iframe');
   iframe.src = iframe.src;
+}
+
+// ════════════════════════════════
+// TAB 4 — SUGGESTIONS FAQ
+// ════════════════════════════════
+async function loadSuggestions(slug) {
+  if (!slug) return;
+  try {
+    const r = await apiFetch(`/api/suggest-improvements?slug=${slug}`);
+    if (!r.ok) return;
+    renderSuggestions(await r.json());
+  } catch {}
+}
+
+function renderSuggestions(data) {
+  const pending = data.pending || [];
+  const history = [...(data.approved || []), ...(data.rejected || []), ...(data.modified || [])];
+
+  const badge = document.getElementById('sug-pending-badge');
+  if (badge) badge.textContent = pending.length;
+
+  const pendingList = document.getElementById('sug-pending-list');
+  if (pendingList) {
+    if (!pending.length) {
+      pendingList.innerHTML = '<div style="font-size:13px;color:var(--muted)">Aucune suggestion en attente. Cliquez sur "Générer maintenant".</div>';
+    } else {
+      pendingList.innerHTML = pending.map(s => `
+        <div class="sug-card pending" id="sug-${s.id}">
+          <div class="sug-title">${escSug(s.suggestion)}</div>
+          ${s.question_source ? `<div class="sug-source">"${escSug(s.question_source)}"</div>` : ''}
+          <textarea class="sug-textarea" id="sug-ta-${s.id}">${escSug(s.faq_entry)}</textarea>
+          <div class="sug-actions">
+            <button class="btn btn-sm" style="background:#16a34a;color:#fff" onclick="approveSuggestion('${s.id}')">✓ Approuver</button>
+            <button class="btn btn-sm" style="background:#2563eb;color:#fff" onclick="modifySuggestion('${s.id}')">✏️ Modifier & approuver</button>
+            <button class="btn btn-sm" style="background:#dc2626;color:#fff" onclick="rejectSuggestion('${s.id}')">✗ Rejeter</button>
+          </div>
+        </div>`).join('');
+    }
+  }
+
+  const histList = document.getElementById('sug-history-list');
+  if (histList) {
+    if (!history.length) {
+      histList.innerHTML = '<div style="font-size:13px;color:var(--muted)">Aucune action cette semaine.</div>';
+    } else {
+      const label = { approved: '✓ Approuvé', modified: '✏️ Modifié', rejected: '✗ Rejeté' };
+      histList.innerHTML = history.map(s => `
+        <div class="sug-card ${s.status}">
+          <div class="sug-title">${escSug(s.suggestion)}</div>
+          <div style="font-size:11px;color:var(--muted);margin-top:.2rem">${label[s.status] || s.status}</div>
+        </div>`).join('');
+    }
+  }
+}
+
+function escSug(s) {
+  if (!s) return '';
+  return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
+async function generateSuggestionsForClient() {
+  if (!S.testerSlug) return;
+  const loader = document.getElementById('sug-loader');
+  loader.style.display = 'block';
+  try {
+    const r = await apiFetch('/api/suggest-improvements', {
+      method: 'POST',
+      body: JSON.stringify({ slug: S.testerSlug, businessName: S.testerBusinessName || S.testerSlug, force: true })
+    });
+    const data = await r.json();
+    if (data.error) { alert('Erreur : ' + data.error + (data.raw ? '\n\n' + data.raw.slice(0, 200) : '')); return; }
+    await loadSuggestions(S.testerSlug);
+  } catch (e) {
+    alert('Erreur connexion : ' + e.message);
+  } finally {
+    loader.style.display = 'none';
+  }
+}
+
+function removeSugCard(id) {
+  const card = document.getElementById('sug-' + id);
+  if (card) { card.style.opacity = '0'; setTimeout(() => { card.remove(); const b = document.getElementById('sug-pending-badge'); if (b) b.textContent = Math.max(0, parseInt(b.textContent || '0') - 1); }, 300); }
+}
+
+async function approveSuggestion(id) {
+  try {
+    const r = await apiFetch('/api/suggest-improvements', { method: 'POST', body: JSON.stringify({ action: 'approve', id }) });
+    if (!r.ok) { const d = await r.json(); alert(d.error || 'Erreur'); return; }
+    removeSugCard(id);
+    setTimeout(() => loadSuggestions(S.testerSlug), 400);
+  } catch (e) { alert('Erreur : ' + e.message); }
+}
+
+async function rejectSuggestion(id) {
+  try {
+    const r = await apiFetch('/api/suggest-improvements', { method: 'POST', body: JSON.stringify({ action: 'reject', id }) });
+    if (!r.ok) { const d = await r.json(); alert(d.error || 'Erreur'); return; }
+    removeSugCard(id);
+    setTimeout(() => loadSuggestions(S.testerSlug), 400);
+  } catch (e) { alert('Erreur : ' + e.message); }
+}
+
+async function modifySuggestion(id) {
+  const ta = document.getElementById('sug-ta-' + id);
+  const faq_entry = ta ? ta.value : '';
+  try {
+    const r = await apiFetch('/api/suggest-improvements', { method: 'POST', body: JSON.stringify({ action: 'modify', id, faq_entry }) });
+    if (!r.ok) { const d = await r.json(); alert(d.error || 'Erreur'); return; }
+    removeSugCard(id);
+    setTimeout(() => loadSuggestions(S.testerSlug), 400);
+  } catch (e) { alert('Erreur : ' + e.message); }
+}
+
+async function approveAllSuggestions() {
+  if (!S.testerSlug) return;
+  if (!confirm('Approuver toutes les suggestions en attente et les ajouter à la FAQ ?')) return;
+  try {
+    const r = await apiFetch('/api/suggest-improvements', { method: 'POST', body: JSON.stringify({ action: 'approve_all', slug: S.testerSlug }) });
+    const d = await r.json();
+    if (d.error) { alert(d.error); return; }
+    alert(`${d.approved} suggestion(s) approuvée(s) et ajoutée(s) à la FAQ.`);
+    await loadSuggestions(S.testerSlug);
+  } catch (e) { alert('Erreur : ' + e.message); }
 }
 
 // ════════════════════════════════

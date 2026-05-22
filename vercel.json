@@ -3,6 +3,10 @@
     {
       "path": "/api/weekly-report?secret=report-secret-elliot-2026",
       "schedule": "0 7 * * 1"
+    },
+    {
+      "path": "/api/suggest-improvements?secret=admin2026&auto=true&allClients=true",
+      "schedule": "0 9 * * 1"
     }
   ]
 }

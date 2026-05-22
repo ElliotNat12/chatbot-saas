@@ -43,8 +43,8 @@ module.exports = async function handler(req, res) {
   }
 
   if (req.method === 'POST') {
-    const { faq } = req.body;
-    if (faq === undefined) return res.status(400).json({ error: 'Missing faq' });
+    const { faq, faq_entry } = req.body;
+    if (faq === undefined && faq_entry === undefined) return res.status(400).json({ error: 'Missing faq or faq_entry' });
 
     try {
       const file = await getGithubFile(`demo-${slug}/config.js`, token);
@@ -54,7 +54,11 @@ module.exports = async function handler(req, res) {
       const config = parseConfig(source);
       if (!config) return res.status(422).json({ error: 'Could not parse config.js' });
 
-      config.faq = faq;
+      if (faq !== undefined) {
+        config.faq = faq;
+      } else {
+        config.faq = (config.faq || '').trimEnd() + '\n' + faq_entry;
+      }
       const newSource = `ChatbotSaaS.init(${JSON.stringify(config, null, 2)});\n`;
       const encoded = Buffer.from(newSource).toString('base64');
 
