@@ -271,15 +271,19 @@
       document.getElementById('accentColorPicker').value = hex;
     }
 
+    // Emoji: "EMOJI: 🍽️"
+    const emojiMatch = faq.match(/^EMOJI\s*:\s*(\S+)/im);
+    if (emojiMatch) {
+      document.getElementById('avatar').value = emojiMatch[1].trim();
+    }
+
     if (detectedName) {
       document.getElementById('businessName').value = detectedName;
-      // Update slug
       const slug = detectedName.toLowerCase()
         .normalize('NFD').replace(/[̀-ͯ]/g, '')
         .replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
       document.getElementById('clientSlug').value = slug;
-      // Bot name: first word
-      document.getElementById('botName').value = detectedName.split(/\s+/)[0];
+      document.getElementById('botName').value = detectedName;
     }
 
     // Phone: +33 6 XX XX XX XX or 0X XX XX XX XX
