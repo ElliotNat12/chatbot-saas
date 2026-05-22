@@ -243,29 +243,46 @@
 
   // Auto-fill form from FAQ text
   function autoFillFromFaq(faq) {
+    // Business name: "Nom entreprise : XXX", "ENTREPRISE: XXX", "Nom: XXX"
+    // or fallback: first line that looks like a proper name (Title Case, no colon)
+    let detectedName = '';
+    const labelMatch = faq.match(/^(?:nom\s+(?:de\s+l['']?entreprise|entreprise|du\s+commerce)?|entreprise|company|business\s+name)\s*[:\-]\s*(.+)/im);
+    if (labelMatch) {
+      detectedName = labelMatch[1].trim();
+    } else {
+      // Fallback: first non-empty line that starts with an uppercase word
+      const firstLine = faq.split('\n').find(l => /^[A-ZÀÂÄÉÈÊËÎÏÔÙÛÜ]/.test(l.trim()) && l.trim().length > 2 && !l.includes(':'));
+      if (firstLine) detectedName = firstLine.trim();
+    }
+
+    if (detectedName) {
+      document.getElementById('businessName').value = detectedName;
+      // Update slug
+      const slug = detectedName.toLowerCase()
+        .normalize('NFD').replace(/[̀-ͯ]/g, '')
+        .replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+      document.getElementById('clientSlug').value = slug;
+      // Bot name: first word
+      document.getElementById('botName').value = detectedName.split(/\s+/)[0];
+    }
+
     // Phone: +33 6 XX XX XX XX or 0X XX XX XX XX
-    const phoneMatch = faq.match(/(?:\+33\s?|0033\s?)?(?:0\s?)?[1-9](?:[\s.\-]?\d{2}){4}/);
-    if (phoneMatch && !document.getElementById('phone').value) {
+    const phoneMatch = faq.match(/(?:\+33[\s.]?|0033[\s.]?)[1-9](?:[\s.\-]?\d{2}){4}|0[1-9](?:[\s.\-]?\d{2}){4}/);
+    if (phoneMatch) {
       document.getElementById('phone').value = phoneMatch[0].trim();
     }
 
     // Booking URL: contains booking/reservation/reserver/contact keywords
     const bookingMatch = faq.match(/https?:\/\/[^\s,\n)]+(?:booking|reservation|r[eé]server|contact|rendez-vous|rdv)[^\s,\n)]*/i)
       || faq.match(/https?:\/\/[^\s,\n)]*(?:booking|reservation|r[eé]server|contact|rdv)[^\s,\n)]*/i);
-    if (bookingMatch && !document.getElementById('bookingUrl').value) {
+    if (bookingMatch) {
       document.getElementById('bookingUrl').value = bookingMatch[0].replace(/[.,)]+$/, '');
-    }
-
-    // Bot name: first word of businessName
-    const businessName = document.getElementById('businessName').value.trim();
-    if (businessName && !document.getElementById('botName').value) {
-      document.getElementById('botName').value = businessName.split(/\s+/)[0];
     }
 
     // Hours: find lines with day names and extract a short summary
     const dayPattern = /(?:lun(?:di)?|mar(?:di)?|mer(?:credi)?|jeu(?:di)?|ven(?:dredi)?|sam(?:edi)?|dim(?:anche)?|mon(?:day)?|tue(?:sday)?|wed(?:nesday)?|thu(?:rsday)?|fri(?:day)?|sat(?:urday)?|sun(?:day)?)[^\n]{0,80}/gi;
     const hourLines = faq.match(dayPattern) || [];
-    if (hourLines.length && !document.getElementById('phoneHours').value) {
+    if (hourLines.length) {
       const summary = hourLines
         .slice(0, 2)
         .map(l => l.trim().replace(/\s+/g, ' '))
