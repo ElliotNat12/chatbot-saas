@@ -243,16 +243,26 @@
 
   // Auto-fill form from FAQ text
   function autoFillFromFaq(faq) {
-    // Business name: "Nom entreprise : XXX", "ENTREPRISE: XXX", "Nom: XXX"
-    // or fallback: first line that looks like a proper name (Title Case, no colon)
+    // Business name detection
+    const SECTION_TITLES = /^(CONTACT|SERVICES|TARIFS|HORAIRES|CONDITIONS|FAQ|ENTREPRISE|INFORMATIONS?)$/i;
     let detectedName = '';
+
+    // Pass 1: explicit label "Nom entreprise:", "ENTREPRISE:", "Nom:", "Company:"
     const labelMatch = faq.match(/^(?:nom\s+(?:de\s+l['']?entreprise|entreprise|du\s+commerce)?|entreprise|company|business\s+name)\s*[:\-]\s*(.+)/im);
     if (labelMatch) {
       detectedName = labelMatch[1].trim();
-    } else {
-      // Fallback: first non-empty line that starts with an uppercase word
-      const firstLine = faq.split('\n').find(l => /^[A-ZÀÂÄÉÈÊËÎÏÔÙÛÜ]/.test(l.trim()) && l.trim().length > 2 && !l.includes(':'));
-      if (firstLine) detectedName = firstLine.trim();
+    }
+
+    // Pass 2: first non-section line starting with uppercase, at least 3 words
+    if (!detectedName) {
+      const lines = faq.split('\n').map(l => l.trim()).filter(Boolean);
+      const candidate = lines.find(l => {
+        if (l.includes(':')) return false;
+        if (SECTION_TITLES.test(l)) return false;
+        const words = l.split(/\s+/);
+        return words.length >= 3 && /^[A-ZÀÂÄÉÈÊËÎÏÔÙÛÜ]/.test(l);
+      });
+      if (candidate) detectedName = candidate;
     }
 
     if (detectedName) {
