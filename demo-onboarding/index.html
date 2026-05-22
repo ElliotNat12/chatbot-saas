@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Onboarding — Analyser votre site</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #f7f7f5;
+      --surface: #ffffff;
+      --border: #e4e4e0;
+      --text: #1a1a1a;
+      --muted: #6b6b6b;
+      --accent: #2563eb;
+      --accent-hover: #1d4ed8;
+      --radius: 12px;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #0f0f0f;
+        --surface: #1a1a1a;
+        --border: #2e2e2e;
+        --text: #f0f0f0;
+        --muted: #888;
+        --accent: #3b82f6;
+        --accent-hover: #60a5fa;
+      }
+    }
+
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+      padding: 3rem 1.25rem 4rem;
+    }
+
+    .container {
+      width: 100%;
+      max-width: 600px;
+    }
+
+    .header {
+      margin-bottom: 2.5rem;
+      text-align: center;
+    }
+
+    .badge {
+      display: inline-block;
+      font-size: 12px;
+      font-weight: 500;
+      letter-spacing: .04em;
+      color: var(--accent);
+      background: color-mix(in srgb, var(--accent) 10%, transparent);
+      border: 1px solid color-mix(in srgb, var(--accent) 20%, transparent);
+      padding: 4px 12px;
+      border-radius: 999px;
+      margin-bottom: 1rem;
+    }
+
+    h1 {
+      font-size: clamp(1.6rem, 5vw, 2.2rem);
+      font-weight: 600;
+      line-height: 1.2;
+      margin-bottom: .75rem;
+    }
+
+    .subtitle {
+      font-size: 15px;
+      color: var(--muted);
+      line-height: 1.55;
+    }
+
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1.75rem;
+      margin-bottom: 1.25rem;
+    }
+
+    label {
+      display: block;
+      font-size: 13.5px;
+      font-weight: 500;
+      margin-bottom: .5rem;
+      color: var(--text);
+    }
+
+    .input-row {
+      display: flex;
+      gap: .75rem;
+    }
+
+    input[type="url"] {
+      flex: 1;
+      height: 44px;
+      padding: 0 1rem;
+      font-family: inherit;
+      font-size: 14px;
+      background: var(--bg);
+      color: var(--text);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      outline: none;
+      transition: border-color .15s;
+    }
+
+    input[type="url"]:focus {
+      border-color: var(--accent);
+    }
+
+    input[type="url"]::placeholder {
+      color: var(--muted);
+    }
+
+    button {
+      font-family: inherit;
+      font-weight: 500;
+      font-size: 14px;
+      cursor: pointer;
+      border: none;
+      border-radius: 8px;
+      transition: background .15s, opacity .15s;
+    }
+
+    .btn-primary {
+      height: 44px;
+      padding: 0 1.25rem;
+      background: var(--accent);
+      color: #fff;
+      white-space: nowrap;
+    }
+
+    .btn-primary:hover:not(:disabled) { background: var(--accent-hover); }
+    .btn-primary:disabled { opacity: .5; cursor: not-allowed; }
+
+    .btn-copy {
+      height: 36px;
+      padding: 0 1rem;
+      background: color-mix(in srgb, var(--accent) 10%, transparent);
+      color: var(--accent);
+      border: 1px solid color-mix(in srgb, var(--accent) 25%, transparent);
+      font-size: 13px;
+    }
+
+    .btn-copy:hover { background: color-mix(in srgb, var(--accent) 18%, transparent); }
+
+    /* Loader */
+    .loader-wrap {
+      display: none;
+      align-items: center;
+      gap: .75rem;
+      padding: 1.25rem 0 .5rem;
+      color: var(--muted);
+      font-size: 13.5px;
+    }
+
+    .loader-wrap.visible { display: flex; }
+
+    .spinner {
+      width: 18px;
+      height: 18px;
+      border: 2px solid var(--border);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin .7s linear infinite;
+      flex-shrink: 0;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* Result */
+    .result-card {
+      display: none;
+    }
+
+    .result-card.visible { display: block; }
+
+    .result-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: .75rem;
+    }
+
+    .result-label {
+      font-size: 13.5px;
+      font-weight: 500;
+      color: var(--text);
+    }
+
+    .result-hint {
+      font-size: 12px;
+      color: var(--muted);
+      margin-top: .25rem;
+    }
+
+    textarea {
+      width: 100%;
+      min-height: 280px;
+      padding: 1rem;
+      font-family: inherit;
+      font-size: 13.5px;
+      line-height: 1.65;
+      background: var(--bg);
+      color: var(--text);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      resize: vertical;
+      outline: none;
+      transition: border-color .15s;
+    }
+
+    textarea:focus { border-color: var(--accent); }
+
+    .copy-feedback {
+      font-size: 12px;
+      color: #16a34a;
+      opacity: 0;
+      transition: opacity .2s;
+      margin-left: .5rem;
+    }
+
+    .copy-feedback.show { opacity: 1; }
+
+    /* Error */
+    .error-msg {
+      display: none;
+      font-size: 13px;
+      color: #dc2626;
+      background: color-mix(in srgb, #dc2626 8%, transparent);
+      border: 1px solid color-mix(in srgb, #dc2626 20%, transparent);
+      border-radius: 8px;
+      padding: .75rem 1rem;
+      margin-top: .75rem;
+    }
+
+    .error-msg.visible { display: block; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <div class="badge">Onboarding automatique</div>
+      <h1>Analysez votre site en un clic</h1>
+      <p class="subtitle">Collez l'URL de votre site pour générer automatiquement les informations clés de votre chatbot.</p>
+    </div>
+
+    <div class="card">
+      <label for="url-input">URL du site à analyser</label>
+      <div class="input-row">
+        <input
+          type="url"
+          id="url-input"
+          placeholder="https://votre-site.fr"
+          autocomplete="off"
+          spellcheck="false"
+        />
+        <button class="btn-primary" id="analyze-btn" onclick="analyze()">
+          Analyser le site
+        </button>
+      </div>
+      <div class="loader-wrap" id="loader">
+        <div class="spinner"></div>
+        <span id="loader-text">Analyse en cours…</span>
+      </div>
+      <div class="error-msg" id="error-msg"></div>
+    </div>
+
+    <div class="card result-card" id="result-card">
+      <div class="result-header">
+        <div>
+          <div class="result-label">Informations extraites</div>
+          <div class="result-hint">Modifiez le texte si nécessaire avant de l'utiliser.</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:.25rem">
+          <button class="btn-copy" onclick="copyFaq()">Copier</button>
+          <span class="copy-feedback" id="copy-feedback">Copié !</span>
+        </div>
+      </div>
+      <textarea id="faq-output" spellcheck="false"></textarea>
+    </div>
+  </div>
+
+  <script>
+    const loaderMessages = [
+      'Récupération du contenu…',
+      'Lecture de la page…',
+      'Extraction des infos clés…',
+      'Presque prêt…'
+    ];
+
+    let loaderTimer = null;
+
+    function startLoaderMessages() {
+      let i = 0;
+      const el = document.getElementById('loader-text');
+      el.textContent = loaderMessages[0];
+      loaderTimer = setInterval(() => {
+        i = (i + 1) % loaderMessages.length;
+        el.textContent = loaderMessages[i];
+      }, 2500);
+    }
+
+    function stopLoaderMessages() {
+      clearInterval(loaderTimer);
+    }
+
+    async function analyze() {
+      const url = document.getElementById('url-input').value.trim();
+      if (!url) {
+        showError('Veuillez entrer une URL valide.');
+        return;
+      }
+
+      const btn = document.getElementById('analyze-btn');
+      const loader = document.getElementById('loader');
+      const errorMsg = document.getElementById('error-msg');
+      const resultCard = document.getElementById('result-card');
+
+      // Reset state
+      errorMsg.classList.remove('visible');
+      resultCard.classList.remove('visible');
+      btn.disabled = true;
+      loader.classList.add('visible');
+      startLoaderMessages();
+
+      try {
+        const res = await fetch('/api/scrape', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ url })
+        });
+
+        const data = await res.json();
+
+        if (!res.ok || !data.faq) {
+          throw new Error(data.error || data.detail || 'Erreur inconnue');
+        }
+
+        document.getElementById('faq-output').value = data.faq;
+        resultCard.classList.add('visible');
+
+      } catch (err) {
+        showError(err.message || 'Une erreur est survenue. Vérifiez l\'URL et réessayez.');
+      } finally {
+        loader.classList.remove('visible');
+        stopLoaderMessages();
+        btn.disabled = false;
+      }
+    }
+
+    function showError(msg) {
+      const el = document.getElementById('error-msg');
+      el.textContent = msg;
+      el.classList.add('visible');
+    }
+
+    async function copyFaq() {
+      const text = document.getElementById('faq-output').value;
+      if (!text) return;
+      try {
+        await navigator.clipboard.writeText(text);
+      } catch {
+        const ta = document.getElementById('faq-output');
+        ta.select();
+        document.execCommand('copy');
+      }
+      const fb = document.getElementById('copy-feedback');
+      fb.classList.add('show');
+      setTimeout(() => fb.classList.remove('show'), 1800);
+    }
+
+    document.getElementById('url-input').addEventListener('keydown', e => {
+      if (e.key === 'Enter') analyze();
+    });
+  </script>
+</body>
+</html>
