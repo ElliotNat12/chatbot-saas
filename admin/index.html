@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ChatbotSaaS Admin</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #0f0f0f; --surface: #1a1a1a; --surface2: #222; --border: #2e2e2e;
+      --text: #f0f0f0; --muted: #777; --accent: #3b82f6; --accent-h: #60a5fa;
+      --green: #16a34a; --red: #dc2626; --radius: 10px;
+    }
+    body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+
+    /* Password overlay */
+    #pw-overlay {
+      position: fixed; inset: 0; background: var(--bg); z-index: 100;
+      display: flex; align-items: center; justify-content: center;
+    }
+    #pw-overlay.hidden { display: none; }
+    .pw-box { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 2.5rem; width: 340px; text-align: center; }
+    .pw-box h2 { font-size: 18px; font-weight: 600; margin-bottom: .4rem; }
+    .pw-box p { font-size: 13px; color: var(--muted); margin-bottom: 1.5rem; }
+    .pw-error { font-size: 12px; color: var(--red); margin-top: .5rem; min-height: 16px; }
+
+    /* Layout */
+    header { border-bottom: 1px solid var(--border); padding: 0 2rem; height: 56px; display: flex; align-items: center; justify-content: space-between; }
+    header h1 { font-size: 15px; font-weight: 600; letter-spacing: -.01em; }
+    header span { font-size: 12px; color: var(--muted); }
+    main { max-width: 780px; margin: 0 auto; padding: 2rem 1.5rem 4rem; }
+
+    /* Tabs */
+    .tabs { display: flex; gap: .25rem; margin-bottom: 2rem; border-bottom: 1px solid var(--border); }
+    .tab-btn { padding: .6rem 1.1rem; font-family: inherit; font-size: 13.5px; font-weight: 500; background: none; border: none; color: var(--muted); cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -1px; transition: color .15s, border-color .15s; }
+    .tab-btn.active { color: var(--text); border-bottom-color: var(--accent); }
+    .tab-pane { display: none; }
+    .tab-pane.active { display: block; }
+
+    /* Form */
+    .section-title { font-size: 11px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); margin: 1.75rem 0 .75rem; }
+    .row { display: grid; grid-template-columns: 1fr 1fr; gap: .75rem; }
+    .row.triple { grid-template-columns: 1fr 1fr 1fr; }
+    .field { display: flex; flex-direction: column; gap: .35rem; }
+    label { font-size: 12.5px; font-weight: 500; color: var(--text); }
+    input[type="text"], input[type="url"], input[type="tel"], input[type="email"], input[type="password"], textarea, select {
+      font-family: inherit; font-size: 13.5px; background: var(--surface); color: var(--text);
+      border: 1px solid var(--border); border-radius: 7px; padding: 9px 11px; outline: none;
+      transition: border-color .15s; width: 100%;
+    }
+    input:focus, textarea:focus { border-color: var(--accent); }
+    input[type="color"] { padding: 3px; height: 38px; cursor: pointer; }
+    .color-row { display: flex; gap: .5rem; align-items: center; }
+    .color-row input[type="text"] { flex: 1; }
+    textarea { resize: vertical; line-height: 1.6; }
+
+    /* Buttons */
+    button.btn { font-family: inherit; font-size: 13.5px; font-weight: 500; cursor: pointer; border: none; border-radius: 7px; transition: background .15s, opacity .15s; }
+    button.btn:disabled { opacity: .45; cursor: not-allowed; }
+    .btn-primary { background: var(--accent); color: #fff; padding: 10px 18px; }
+    .btn-primary:hover:not(:disabled) { background: var(--accent-h); }
+    .btn-secondary { background: var(--surface2); color: var(--text); border: 1px solid var(--border); padding: 9px 16px; }
+    .btn-secondary:hover:not(:disabled) { border-color: var(--accent); }
+    .btn-deploy { background: var(--green); color: #fff; padding: 12px 24px; font-size: 14px; width: 100%; margin-top: 1.5rem; }
+    .btn-deploy:hover:not(:disabled) { opacity: .85; }
+
+    /* URL row */
+    .url-row { display: flex; gap: .75rem; }
+    .url-row input { flex: 1; }
+
+    /* Loader */
+    .spinner { width: 15px; height: 15px; border: 2px solid rgba(255,255,255,.3); border-top-color: #fff; border-radius: 50%; animation: spin .6s linear infinite; display: inline-block; vertical-align: middle; margin-right: 6px; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* Success card */
+    .success-card { background: color-mix(in srgb, var(--green) 10%, transparent); border: 1px solid color-mix(in srgb, var(--green) 30%, transparent); border-radius: var(--radius); padding: 1.25rem 1.5rem; margin-top: 1rem; display: none; }
+    .success-card.visible { display: block; }
+    .success-card p { font-size: 13px; color: var(--green); margin-bottom: .5rem; font-weight: 500; }
+    .success-card a { color: var(--accent-h); font-size: 13.5px; word-break: break-all; }
+
+    /* Error msg */
+    .err-msg { font-size: 12.5px; color: var(--red); background: color-mix(in srgb, var(--red) 8%, transparent); border: 1px solid color-mix(in srgb, var(--red) 20%, transparent); border-radius: 7px; padding: .6rem .9rem; margin-top: .75rem; display: none; }
+    .err-msg.visible { display: block; }
+
+    /* Clients list */
+    .client-list { display: flex; flex-direction: column; gap: .6rem; margin-top: 1rem; }
+    .client-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 1rem 1.25rem; display: flex; align-items: center; justify-content: space-between; gap: 1rem; }
+    .client-card-info { flex: 1; }
+    .client-name { font-size: 14px; font-weight: 500; }
+    .client-url { font-size: 12px; color: var(--muted); margin-top: 2px; }
+    .btn-open { background: var(--surface2); color: var(--accent-h); border: 1px solid var(--border); border-radius: 6px; padding: 6px 14px; font-family: inherit; font-size: 13px; cursor: pointer; text-decoration: none; white-space: nowrap; }
+    .btn-open:hover { border-color: var(--accent); }
+    .empty-state { text-align: center; color: var(--muted); font-size: 14px; padding: 3rem 0; }
+    .loading-state { text-align: center; color: var(--muted); font-size: 13px; padding: 2rem 0; }
+  </style>
+</head>
+<body>
+
+<!-- Password overlay -->
+<div id="pw-overlay">
+  <div class="pw-box">
+    <h2>ChatbotSaaS Admin</h2>
+    <p>Entrez le mot de passe pour accéder au dashboard.</p>
+    <div class="field">
+      <input type="password" id="pw-input" placeholder="Mot de passe" autocomplete="current-password" />
+    </div>
+    <div class="pw-error" id="pw-error"></div>
+    <button class="btn btn-primary" style="width:100%;margin-top:1rem;" onclick="checkPassword()">Accéder</button>
+  </div>
+</div>
+
+<header>
+  <h1>ChatbotSaaS Admin</h1>
+  <span id="header-date"></span>
+</header>
+
+<main>
+  <div class="tabs">
+    <button class="tab-btn active" onclick="switchTab('deploy', this)">Nouveau client</button>
+    <button class="tab-btn" onclick="switchTab('clients', this)">Mes clients</button>
+  </div>
+
+  <!-- TAB 1: Nouveau client -->
+  <div class="tab-pane active" id="tab-deploy">
+    <div class="section-title">Site à analyser</div>
+    <div class="url-row">
+      <input type="url" id="site-url" placeholder="https://exemple.fr" />
+      <button class="btn btn-secondary" id="analyze-btn" onclick="analyzeSite()">Analyser le site</button>
+    </div>
+    <div class="err-msg" id="analyze-err"></div>
+
+    <div class="section-title">Identité</div>
+    <div class="row">
+      <div class="field">
+        <label>Nom de l'entreprise</label>
+        <input type="text" id="businessName" placeholder="Le Tankiste SCA" oninput="autoSlug()" />
+      </div>
+      <div class="field">
+        <label>Slug URL (auto)</label>
+        <input type="text" id="clientSlug" placeholder="tankiste-sca" />
+      </div>
+    </div>
+    <div class="row triple" style="margin-top:.75rem;">
+      <div class="field">
+        <label>Nom du bot</label>
+        <input type="text" id="botName" placeholder="Tank" />
+      </div>
+      <div class="field">
+        <label>Avatar (emoji)</label>
+        <input type="text" id="avatar" placeholder="🪖" maxlength="4" />
+      </div>
+      <div class="field">
+        <label>Couleur principale</label>
+        <div class="color-row">
+          <input type="color" id="accentColorPicker" value="#2563eb" oninput="document.getElementById('accentColor').value=this.value" />
+          <input type="text" id="accentColor" value="#2563eb" placeholder="#2563eb" oninput="syncColor(this.value)" />
+        </div>
+      </div>
+    </div>
+
+    <div class="section-title">Contact</div>
+    <div class="row">
+      <div class="field">
+        <label>Téléphone</label>
+        <input type="tel" id="phone" placeholder="+33 6 00 00 00 00" />
+      </div>
+      <div class="field">
+        <label>Horaires téléphone</label>
+        <input type="text" id="phoneHours" placeholder="lun–ven, 9h–18h" />
+      </div>
+    </div>
+    <div class="field" style="margin-top:.75rem;">
+      <label>URL de réservation</label>
+      <input type="url" id="bookingUrl" placeholder="https://exemple.fr/reservation" />
+    </div>
+
+    <div class="section-title">Base de connaissances (FAQ)</div>
+    <textarea id="faq" rows="12" placeholder="Cliquez sur 'Analyser le site' pour remplir automatiquement, ou saisissez les informations manuellement…"></textarea>
+
+    <div class="err-msg" id="deploy-err"></div>
+    <button class="btn btn-deploy" id="deploy-btn" onclick="deploySite()">Déployer le chatbot →</button>
+
+    <div class="success-card" id="success-card">
+      <p>Déploiement en cours sur Vercel (~ 30 secondes).</p>
+      <a id="success-url" href="#" target="_blank"></a>
+    </div>
+  </div>
+
+  <!-- TAB 2: Mes clients -->
+  <div class="tab-pane" id="tab-clients">
+    <div id="clients-container">
+      <div class="loading-state">Chargement…</div>
+    </div>
+  </div>
+</main>
+
+<script>
+  const ADMIN_PASSWORD = 'admin2026';
+  const ADMIN_SECRET   = 'admin2026';
+
+  // Password
+  document.getElementById('header-date').textContent =
+    new Date().toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+
+  document.getElementById('pw-input').addEventListener('keydown', e => { if (e.key === 'Enter') checkPassword(); });
+
+  function checkPassword() {
+    const val = document.getElementById('pw-input').value;
+    if (val === ADMIN_PASSWORD) {
+      document.getElementById('pw-overlay').classList.add('hidden');
+    } else {
+      document.getElementById('pw-error').textContent = 'Mot de passe incorrect.';
+    }
+  }
+
+  // Tabs
+  function switchTab(name, btn) {
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById('tab-' + name).classList.add('active');
+    if (name === 'clients') loadClients();
+  }
+
+  // Slug auto-generation
+  function autoSlug() {
+    const name = document.getElementById('businessName').value;
+    const slug = name.toLowerCase()
+      .normalize('NFD').replace(/[̀-ͯ]/g, '')
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-|-$/g, '');
+    document.getElementById('clientSlug').value = slug;
+  }
+
+  // Color sync
+  function syncColor(hex) {
+    if (/^#[0-9a-fA-F]{6}$/.test(hex)) {
+      document.getElementById('accentColorPicker').value = hex;
+    }
+  }
+
+  // Analyze
+  async function analyzeSite() {
+    const url = document.getElementById('site-url').value.trim();
+    if (!url) return showErr('analyze-err', 'Entrez une URL valide.');
+    hideErr('analyze-err');
+
+    const btn = document.getElementById('analyze-btn');
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner"></span>Analyse…';
+
+    try {
+      const res = await fetch('/api/scrape', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ url })
+      });
+      const data = await res.json();
+      if (!res.ok || !data.faq) throw new Error(data.error || 'Erreur scrape');
+      document.getElementById('faq').value = data.faq;
+
+      // Auto-fill booking URL if found
+      const bookingMatch = data.faq.match(/https?:\/\/[^\s]*(booking|reservation|reserver)[^\s]*/i);
+      if (bookingMatch && !document.getElementById('bookingUrl').value) {
+        document.getElementById('bookingUrl').value = bookingMatch[0];
+      }
+    } catch (err) {
+      showErr('analyze-err', err.message || 'Erreur lors de l\'analyse.');
+    } finally {
+      btn.disabled = false;
+      btn.textContent = 'Analyser le site';
+    }
+  }
+
+  // Deploy
+  async function deploySite() {
+    hideErr('deploy-err');
+    document.getElementById('success-card').classList.remove('visible');
+
+    const payload = {
+      clientSlug:          document.getElementById('clientSlug').value.trim(),
+      businessName:        document.getElementById('businessName').value.trim(),
+      botName:             document.getElementById('botName').value.trim(),
+      avatar:              document.getElementById('avatar').value.trim() || '💬',
+      accentColor:         document.getElementById('accentColor').value.trim(),
+      phone:               document.getElementById('phone').value.trim(),
+      phoneHours:          document.getElementById('phoneHours').value.trim(),
+      bookingUrl:          document.getElementById('bookingUrl').value.trim(),
+      faq:                 document.getElementById('faq').value.trim(),
+    };
+
+    if (!payload.clientSlug) return showErr('deploy-err', 'Le slug est obligatoire.');
+    if (!payload.businessName) return showErr('deploy-err', 'Le nom de l\'entreprise est obligatoire.');
+
+    const btn = document.getElementById('deploy-btn');
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner"></span>Déploiement en cours…';
+
+    try {
+      const res = await fetch('/api/admin-deploy', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-admin-secret': ADMIN_SECRET },
+        body: JSON.stringify(payload)
+      });
+      const data = await res.json();
+      if (!res.ok || !data.url) throw new Error(data.error || 'Erreur de déploiement');
+
+      const link = document.getElementById('success-url');
+      link.href = data.url;
+      link.textContent = data.url;
+      document.getElementById('success-card').classList.add('visible');
+    } catch (err) {
+      showErr('deploy-err', err.message || 'Erreur lors du déploiement.');
+    } finally {
+      btn.disabled = false;
+      btn.textContent = 'Déployer le chatbot →';
+    }
+  }
+
+  // Load clients
+  async function loadClients() {
+    const container = document.getElementById('clients-container');
+    container.innerHTML = '<div class="loading-state"><span class="spinner" style="border-top-color:var(--accent);border-color:var(--border);"></span> Chargement…</div>';
+    try {
+      const res = await fetch('/api/clients-list');
+      const clients = await res.json();
+      if (!clients.length) {
+        container.innerHTML = '<div class="empty-state">Aucun client déployé pour l\'instant.</div>';
+        return;
+      }
+      container.innerHTML = `<div class="client-list">${clients.map(c => `
+        <div class="client-card">
+          <div class="client-card-info">
+            <div class="client-name">${c.name}</div>
+            <div class="client-url">${c.url}</div>
+          </div>
+          <a class="btn-open" href="${c.url}" target="_blank">Ouvrir →</a>
+        </div>`).join('')}
+      </div>`;
+    } catch (err) {
+      container.innerHTML = `<div class="empty-state" style="color:var(--red);">Erreur : ${err.message}</div>`;
+    }
+  }
+
+  function showErr(id, msg) {
+    const el = document.getElementById(id);
+    el.textContent = msg;
+    el.classList.add('visible');
+  }
+  function hideErr(id) {
+    const el = document.getElementById(id);
+    el.textContent = '';
+    el.classList.remove('visible');
+  }
+</script>
+</body>
+</html>
