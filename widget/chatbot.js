@@ -266,6 +266,28 @@
     const suggestBox = document.getElementById('cb-suggestions');
 
     let history = [], isOpen = false, isTyping = false, greeted = false, lead = {}, notifySent = false, formShown = false;
+    let sessionStart = Date.now(), logSent = false;
+
+    function detectLanguage() {
+      const userTexts = history.filter(m => m.role === 'user').map(m => m.content).join(' ').toLowerCase();
+      const enWords = ['if', 'the', 'my', 'i', 'have', 'want', 'need', 'can', 'you', 'how', 'much'];
+      const enCount = enWords.filter(w => new RegExp('\\b' + w + '\\b').test(userTexts)).length;
+      return enCount > 2 ? 'EN' : 'FR';
+    }
+
+    function sendLog() {
+      if (logSent || history.length < 2) return;
+      logSent = true;
+      const payload = {
+        businessName: cfg.businessName || null,
+        messages: history,
+        language: detectLanguage(),
+        leadScore: lead.score || null,
+        converted: notifySent,
+        sessionDurationSeconds: Math.round((Date.now() - sessionStart) / 1000)
+      };
+      fetch('/api/log', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) }).catch(() => {});
+    }
 
     function now() {
       return new Date().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
@@ -403,6 +425,7 @@
       }
 
       history.push({ role: 'assistant', content: clean });
+      if (history.length >= 20) sendLog();
       return { text: clean, showForm };
     }
 
@@ -485,7 +508,7 @@
         }, 300);
       }
     }
-    function closeChat() { isOpen = false; win.classList.remove('open'); launcher.classList.remove('open'); document.body.style.overflow = ''; }
+    function closeChat() { isOpen = false; win.classList.remove('open'); launcher.classList.remove('open'); document.body.style.overflow = ''; sendLog(); }
 
     launcher.addEventListener('click', () => isOpen ? closeChat() : openChat());
     closeBtn.addEventListener('click', closeChat);
