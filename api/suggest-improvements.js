@@ -101,6 +101,13 @@ async function generateForClient(slug, businessName, force) {
     if (cached.length > 0) return { suggestions: cached, count: cached.length, from_cache: true };
   }
 
+  if (force) {
+    await fetch(
+      `${process.env.SUPABASE_URL}/rest/v1/faq_suggestions?slug=eq.${slug}&status=eq.pending&week_of=eq.${weekOf}`,
+      { method: 'DELETE', headers: sbH() }
+    );
+  }
+
   const since = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
   const [convRes, configFile] = await Promise.all([
     fetch(
@@ -114,6 +121,7 @@ async function generateForClient(slug, businessName, force) {
   const faq = configFile
     ? parseConfig(Buffer.from(configFile.content, 'base64').toString('utf-8'))?.faq || ''
     : '';
+  console.log(`[suggest] slug=${slug} faq_length=${faq.length} conversations=${conversations.length}`);
 
   const counts = {};
   for (const c of conversations) {
