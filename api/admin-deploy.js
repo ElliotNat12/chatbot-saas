@@ -111,18 +111,29 @@ async function getFileSha(path, token) {
 
 async function pushFile(path, content, message, token) {
   const sha = await getFileSha(path, token);
-  const body = { message, content: Buffer.from(content).toString('base64') };
+  const encoded = Buffer.from(content).toString('base64');
+  const body = { message, content: encoded };
   if (sha) body.sha = sha;
 
-  const res = await fetch(`${GITHUB_API}/repos/${REPO}/contents/${path}`, {
+  const put = (b) => fetch(`${GITHUB_API}/repos/${REPO}/contents/${path}`, {
     method: 'PUT',
     headers: {
       'Authorization': `Bearer ${token}`,
       'Accept': 'application/vnd.github+json',
       'Content-Type': 'application/json'
     },
-    body: JSON.stringify(body)
+    body: JSON.stringify(b)
   });
+
+  let res = await put(body);
+
+  // 409 = SHA conflict (file changed between GET and PUT) — refetch SHA and retry once
+  if (res.status === 409) {
+    const freshSha = await getFileSha(path, token);
+    const retryBody = { message, content: encoded };
+    if (freshSha) retryBody.sha = freshSha;
+    res = await put(retryBody);
+  }
 
   if (!res.ok) {
     const err = await res.text();
