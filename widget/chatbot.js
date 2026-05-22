@@ -274,7 +274,24 @@
       const isEscalate = type === 'bot' && cfg.phone && text.includes(cfg.phone);
       const div = document.createElement('div');
       div.className = 'cb-msg ' + (isEscalate ? 'escalate' : type);
-      div.textContent = text;
+
+      const urlRegex = /(https?:\/\/[^\s]+)/;
+      const urlMatch = type === 'bot' && text.match(urlRegex);
+      if (urlMatch) {
+        const url = urlMatch[1];
+        const label = /booking|reservation/i.test(url) ? 'Réserver maintenant' : 'En savoir plus';
+        div.textContent = text.replace(urlRegex, '').trim();
+        const btn = document.createElement('a');
+        btn.href = url;
+        btn.target = '_blank';
+        btn.rel = 'noopener noreferrer';
+        btn.textContent = label;
+        btn.style.cssText = 'background:var(--cb-accent);color:#fff;border:none;border-radius:20px;padding:8px 16px;font-size:13px;cursor:pointer;margin-top:8px;display:inline-block;text-decoration:none;';
+        div.appendChild(btn);
+      } else {
+        div.textContent = text;
+      }
+
       messages.appendChild(div);
       const time = document.createElement('div');
       time.className = 'cb-msg-time' + (type === 'user' ? ' right' : '');
