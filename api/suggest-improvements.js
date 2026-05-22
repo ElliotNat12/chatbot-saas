@@ -122,6 +122,7 @@ async function generateForClient(slug, businessName, force) {
     ? parseConfig(Buffer.from(configFile.content, 'base64').toString('utf-8'))?.faq || ''
     : '';
   console.log(`[suggest] slug=${slug} faq_length=${faq.length} conversations=${conversations.length}`);
+  console.log(`[suggest] faq_preview=${faq.slice(0, 200)}`);
 
   const counts = {};
   for (const c of conversations) {
@@ -159,11 +160,11 @@ ${fewConversations ? '- Puisqu\'il y a peu de conversations, concentre-toi sur l
 
 Pour chaque suggestion, fournis :
 1. La question ou le sujet manquant (suggestion)
-2. Le texte exact à ajouter dans la FAQ avec les vraies infos (faq_entry)
+2. Le texte exact à ajouter dans la FAQ avec les vraies infos (faq_entry) — minimum 30 mots, réponse complète et précise utilisant les informations réelles de la FAQ fournie, pas de placeholder
 3. La source qui a révélé ce manque — conversation, question fréquente, ou "Analyse de la FAQ" si peu de données (question_source)
 
 Réponds UNIQUEMENT en JSON valide, tableau d'objets avec ces champs :
-[{"suggestion": "texte court décrivant ce qui manque", "faq_entry": "le texte exact à ajouter dans la FAQ", "question_source": "la source"}]`;
+[{"suggestion": "texte court décrivant ce qui manque", "faq_entry": "réponse complète et précise avec les vraies infos du business, minimum 30 mots", "question_source": "la source"}]`;
 
   const aiRes = await fetch('https://api.anthropic.com/v1/messages', {
     method: 'POST',
@@ -200,7 +201,7 @@ Réponds UNIQUEMENT en JSON valide, tableau d'objets avec ces champs :
     slug,
     business_name: businessName,
     suggestion: s.suggestion || '',
-    faq_entry: s.faq_entry || '',
+    faq_entry: s.faq_entry || s.suggestion || '',
     question_source: s.question_source || null,
     status: 'pending',
     week_of: weekOf
