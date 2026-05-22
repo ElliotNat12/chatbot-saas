@@ -284,6 +284,15 @@
     btn.disabled = true;
     btn.innerHTML = '<span class="spinner"></span>Analyse…';
 
+    // Reset all fields before new analysis
+    ['businessName', 'clientSlug', 'botName', 'avatar', 'phone', 'phoneHours', 'bookingUrl', 'faq'].forEach(id => {
+      document.getElementById(id).value = '';
+    });
+    document.getElementById('accentColor').value = '#2563eb';
+    document.getElementById('accentColorPicker').value = '#2563eb';
+    document.getElementById('success-card').classList.remove('visible');
+    hideErr('deploy-err');
+
     try {
       const res = await fetch('/api/scrape', {
         method: 'POST',
