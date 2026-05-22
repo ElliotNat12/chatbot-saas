@@ -1,0 +1,874 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ChatBot Démo — Le Comptoir du Marché</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: #f0f2f5;
+      min-height: 100vh;
+    }
+
+    /* ── Page de démo ── */
+    .demo-page {
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 40px 20px 120px;
+    }
+
+    .demo-header {
+      text-align: center;
+      margin-bottom: 40px;
+    }
+
+    .demo-header h1 {
+      font-size: 2rem;
+      color: #1a1a2e;
+      margin-bottom: 8px;
+    }
+
+    .demo-header p {
+      color: #666;
+      font-size: 1rem;
+    }
+
+    .demo-header .badge {
+      display: inline-block;
+      background: #e8f5e9;
+      color: #2e7d32;
+      font-size: 0.75rem;
+      font-weight: 600;
+      padding: 4px 10px;
+      border-radius: 20px;
+      margin-bottom: 12px;
+      letter-spacing: 0.5px;
+    }
+
+    /* ── Config card ── */
+    .config-card {
+      background: white;
+      border-radius: 16px;
+      padding: 28px;
+      margin-bottom: 24px;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+    }
+
+    .config-card h2 {
+      font-size: 0.85rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      color: #999;
+      margin-bottom: 16px;
+    }
+
+    .api-row {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+    }
+
+    .api-row input {
+      flex: 1;
+      padding: 10px 14px;
+      border: 1.5px solid #e0e0e0;
+      border-radius: 10px;
+      font-size: 0.9rem;
+      font-family: monospace;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+
+    .api-row input:focus { border-color: #5c6bc0; }
+
+    .api-row button {
+      padding: 10px 20px;
+      background: #5c6bc0;
+      color: white;
+      border: none;
+      border-radius: 10px;
+      font-size: 0.9rem;
+      font-weight: 600;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: background 0.2s;
+    }
+
+    .api-row button:hover { background: #3f51b5; }
+
+    .api-note {
+      font-size: 0.78rem;
+      color: #aaa;
+      margin-top: 8px;
+    }
+
+    /* ── Variables card ── */
+    .vars-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+    }
+
+    @media (max-width: 600px) { .vars-grid { grid-template-columns: 1fr; } }
+
+    .var-field label {
+      display: block;
+      font-size: 0.78rem;
+      font-weight: 600;
+      color: #888;
+      margin-bottom: 5px;
+      font-family: monospace;
+    }
+
+    .var-field input, .var-field textarea {
+      width: 100%;
+      padding: 9px 12px;
+      border: 1.5px solid #e0e0e0;
+      border-radius: 10px;
+      font-size: 0.88rem;
+      outline: none;
+      transition: border-color 0.2s;
+      font-family: inherit;
+      resize: vertical;
+    }
+
+    .var-field input:focus, .var-field textarea:focus { border-color: #5c6bc0; }
+
+    .var-field.full { grid-column: 1 / -1; }
+
+    .apply-btn {
+      margin-top: 16px;
+      padding: 10px 22px;
+      background: #f0f0f0;
+      color: #333;
+      border: none;
+      border-radius: 10px;
+      font-size: 0.88rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    .apply-btn:hover { background: #e0e0e0; }
+
+    /* ── Info banner ── */
+    .info-banner {
+      background: #fff8e1;
+      border: 1.5px solid #ffe082;
+      border-radius: 12px;
+      padding: 14px 18px;
+      font-size: 0.85rem;
+      color: #5d4037;
+      margin-bottom: 24px;
+    }
+
+    /* ── Fake website ── */
+    .fake-site {
+      background: white;
+      border-radius: 16px;
+      overflow: hidden;
+      box-shadow: 0 4px 24px rgba(0,0,0,0.1);
+      position: relative;
+      min-height: 500px;
+    }
+
+    .fake-site-bar {
+      background: #1a1a2e;
+      padding: 12px 20px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .dot { width: 12px; height: 12px; border-radius: 50%; }
+    .dot.red { background: #ff5f57; }
+    .dot.yellow { background: #febc2e; }
+    .dot.green { background: #28c840; }
+
+    .fake-url {
+      margin-left: 12px;
+      background: rgba(255,255,255,0.1);
+      border-radius: 6px;
+      padding: 4px 14px;
+      font-size: 0.8rem;
+      color: rgba(255,255,255,0.6);
+      font-family: monospace;
+    }
+
+    .fake-site-content {
+      padding: 40px;
+      text-align: center;
+    }
+
+    .fake-site-content h2 {
+      font-size: 2.2rem;
+      color: #1a1a2e;
+      margin-bottom: 10px;
+    }
+
+    .fake-site-content p {
+      color: #666;
+      font-size: 1rem;
+      max-width: 400px;
+      margin: 0 auto 30px;
+      line-height: 1.6;
+    }
+
+    .fake-hero-img {
+      width: 100%;
+      max-width: 420px;
+      height: 200px;
+      background: linear-gradient(135deg, #f5e6d3, #e8d5b7);
+      border-radius: 12px;
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 3rem;
+    }
+
+    /* ── Chat widget ── */
+    #chat-bubble {
+      position: absolute;
+      bottom: 24px;
+      right: 24px;
+      width: 56px;
+      height: 56px;
+      border-radius: 50%;
+      background: #5c6bc0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      box-shadow: 0 4px 16px rgba(92,107,192,0.5);
+      transition: transform 0.2s, box-shadow 0.2s;
+      z-index: 100;
+    }
+
+    #chat-bubble:hover {
+      transform: scale(1.08);
+      box-shadow: 0 6px 20px rgba(92,107,192,0.6);
+    }
+
+    #chat-bubble svg { width: 26px; height: 26px; fill: white; }
+
+    .bubble-badge {
+      position: absolute;
+      top: -2px;
+      right: -2px;
+      width: 18px;
+      height: 18px;
+      background: #f44336;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 10px;
+      color: white;
+      font-weight: 700;
+    }
+
+    #chat-window {
+      position: absolute;
+      bottom: 90px;
+      right: 24px;
+      width: 340px;
+      max-height: 520px;
+      background: white;
+      border-radius: 18px;
+      box-shadow: 0 8px 40px rgba(0,0,0,0.18);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      transform: scale(0.9) translateY(20px);
+      opacity: 0;
+      pointer-events: none;
+      transition: transform 0.25s cubic-bezier(0.34,1.56,0.64,1), opacity 0.2s;
+      z-index: 99;
+    }
+
+    #chat-window.open {
+      transform: scale(1) translateY(0);
+      opacity: 1;
+      pointer-events: all;
+    }
+
+    .chat-header {
+      background: linear-gradient(135deg, #5c6bc0, #3f51b5);
+      padding: 16px 18px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-shrink: 0;
+    }
+
+    .chat-avatar {
+      width: 38px;
+      height: 38px;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.25);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.1rem;
+      flex-shrink: 0;
+    }
+
+    .chat-header-info { flex: 1; }
+    .chat-header-name { color: white; font-weight: 700; font-size: 0.95rem; }
+    .chat-header-status {
+      color: rgba(255,255,255,0.75);
+      font-size: 0.75rem;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .status-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: #69f0ae;
+      display: inline-block;
+    }
+
+    .chat-close {
+      background: none;
+      border: none;
+      cursor: pointer;
+      color: rgba(255,255,255,0.7);
+      padding: 4px;
+      display: flex;
+      transition: color 0.2s;
+    }
+
+    .chat-close:hover { color: white; }
+    .chat-close svg { width: 18px; height: 18px; }
+
+    .chat-messages {
+      flex: 1;
+      overflow-y: auto;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .chat-messages::-webkit-scrollbar { width: 4px; }
+    .chat-messages::-webkit-scrollbar-track { background: transparent; }
+    .chat-messages::-webkit-scrollbar-thumb { background: #e0e0e0; border-radius: 4px; }
+
+    .message {
+      display: flex;
+      flex-direction: column;
+      max-width: 82%;
+      animation: fadeUp 0.25s ease;
+    }
+
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .message.bot { align-self: flex-start; }
+    .message.user { align-self: flex-end; }
+
+    .message-bubble {
+      padding: 10px 14px;
+      border-radius: 16px;
+      font-size: 0.875rem;
+      line-height: 1.5;
+      word-break: break-word;
+    }
+
+    .bot .message-bubble {
+      background: #f3f4f6;
+      color: #1a1a2e;
+      border-bottom-left-radius: 4px;
+    }
+
+    .user .message-bubble {
+      background: linear-gradient(135deg, #5c6bc0, #3f51b5);
+      color: white;
+      border-bottom-right-radius: 4px;
+    }
+
+    /* Suggestions */
+    .suggestions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-top: 6px;
+    }
+
+    .suggestion-chip {
+      padding: 6px 12px;
+      border: 1.5px solid #5c6bc0;
+      border-radius: 20px;
+      font-size: 0.78rem;
+      color: #5c6bc0;
+      cursor: pointer;
+      background: white;
+      transition: background 0.15s, color 0.15s;
+      white-space: nowrap;
+    }
+
+    .suggestion-chip:hover {
+      background: #5c6bc0;
+      color: white;
+    }
+
+    /* Typing indicator */
+    .typing-indicator {
+      display: flex;
+      gap: 4px;
+      padding: 12px 14px;
+      background: #f3f4f6;
+      border-radius: 16px;
+      border-bottom-left-radius: 4px;
+      align-self: flex-start;
+      width: fit-content;
+    }
+
+    .typing-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: #aaa;
+      animation: bounce 1.2s infinite;
+    }
+
+    .typing-dot:nth-child(2) { animation-delay: 0.2s; }
+    .typing-dot:nth-child(3) { animation-delay: 0.4s; }
+
+    @keyframes bounce {
+      0%, 60%, 100% { transform: translateY(0); }
+      30% { transform: translateY(-5px); }
+    }
+
+    /* Chat footer */
+    .chat-footer {
+      padding: 12px;
+      border-top: 1px solid #f0f0f0;
+      flex-shrink: 0;
+    }
+
+    .chat-input-row {
+      display: flex;
+      gap: 8px;
+      align-items: flex-end;
+    }
+
+    .chat-input {
+      flex: 1;
+      padding: 10px 14px;
+      border: 1.5px solid #e0e0e0;
+      border-radius: 22px;
+      font-size: 0.875rem;
+      outline: none;
+      resize: none;
+      font-family: inherit;
+      max-height: 100px;
+      min-height: 40px;
+      line-height: 1.4;
+      transition: border-color 0.2s;
+    }
+
+    .chat-input:focus { border-color: #5c6bc0; }
+
+    .send-btn {
+      width: 38px;
+      height: 38px;
+      border-radius: 50%;
+      background: #5c6bc0;
+      border: none;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      transition: background 0.2s, transform 0.15s;
+    }
+
+    .send-btn:hover { background: #3f51b5; transform: scale(1.05); }
+    .send-btn:disabled { background: #ccc; cursor: default; transform: none; }
+    .send-btn svg { width: 17px; height: 17px; fill: white; }
+
+    .chat-powered {
+      text-align: center;
+      font-size: 0.68rem;
+      color: #ccc;
+      margin-top: 8px;
+    }
+
+    /* ── Status message ── */
+    #status-msg {
+      font-size: 0.82rem;
+      padding: 6px 12px;
+      border-radius: 8px;
+      margin-top: 8px;
+      display: none;
+    }
+
+    #status-msg.error { background: #ffebee; color: #c62828; display: block; }
+    #status-msg.success { background: #e8f5e9; color: #2e7d32; display: block; }
+  </style>
+</head>
+<body>
+
+<div class="demo-page">
+  <div class="demo-header">
+    <div class="badge">DÉMO INTERACTIVE</div>
+    <h1>Widget Chatbot SaaS</h1>
+    <p>Configurez, testez, adaptez — prêt à embarquer sur n'importe quel site.</p>
+  </div>
+
+  <!-- Clé API -->
+  <div class="config-card">
+    <h2>1 · Clé API Anthropic</h2>
+    <div class="api-row">
+      <input type="password" id="api-key" placeholder="sk-ant-api03-…" autocomplete="off" />
+      <button onclick="saveKey()">Connecter</button>
+    </div>
+    <p class="api-note">Votre clé ne quitte pas le navigateur — aucun serveur intermédiaire.</p>
+    <div id="status-msg"></div>
+  </div>
+
+  <!-- Variables -->
+  <div class="config-card">
+    <h2>2 · Configurer le bot</h2>
+    <div class="vars-grid">
+      <div class="var-field">
+        <label>[NOM_BOT]</label>
+        <input id="v-nom-bot" value="Léa" />
+      </div>
+      <div class="var-field">
+        <label>[NOM_ETABLISSEMENT]</label>
+        <input id="v-nom-etab" value="Le Comptoir du Marché" />
+      </div>
+      <div class="var-field">
+        <label>[TELEPHONE]</label>
+        <input id="v-tel" value="05 56 44 12 34" />
+      </div>
+      <div class="var-field">
+        <label>[LIEN_RESA]</label>
+        <input id="v-resa" value="https://lecomptoirdumarche.fr/reserver" />
+      </div>
+      <div class="var-field full">
+        <label>[INFOS_FAQ]</label>
+        <textarea id="v-faq" rows="7">Horaires : mardi au samedi 12h–14h30 et 19h–22h30. Fermé dimanche et lundi.
+Adresse : 14 rue des Capucins, 33000 Bordeaux. Métro ligne B, arrêt Hôtel de Ville.
+Parking : parking Mériadeck à 5 min à pied, gratuit le soir après 19h.
+Menu du midi : entrée + plat ou plat + dessert à 18€. Menu complet à 24€.
+Carte : cuisine de saison, produits locaux. Spécialité : entrecôte bordelaise et cannelés maison.
+Végétarien : 2 options au menu chaque jour.
+Animaux : acceptés en terrasse uniquement.
+Groupe : possible jusqu'à 20 personnes, contacter le restaurant au 05 56 44 12 34.</textarea>
+      </div>
+    </div>
+    <button class="apply-btn" onclick="applyConfig()">Appliquer la configuration</button>
+  </div>
+
+  <div class="info-banner">
+    Le bot utilise ces informations pour répondre. Modifiez n'importe quel champ et cliquez <strong>Appliquer</strong> pour voir l'effet en direct.
+  </div>
+
+  <!-- Faux site web avec le widget -->
+  <div class="fake-site">
+    <div class="fake-site-bar">
+      <div class="dot red"></div>
+      <div class="dot yellow"></div>
+      <div class="dot green"></div>
+      <div class="fake-url">lecomptoirdumarche.fr</div>
+    </div>
+    <div class="fake-site-content">
+      <h2 id="site-title">Le Comptoir du Marché</h2>
+      <p>Cuisine de saison, produits locaux, en plein cœur de Bordeaux.</p>
+      <div class="fake-hero-img">🍽️</div>
+    </div>
+
+    <!-- Widget chatbot -->
+    <div id="chat-bubble" onclick="toggleChat()">
+      <svg viewBox="0 0 24 24"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-2 10H6V10h12v2zm0-3H6V7h12v2z"/></svg>
+      <div class="bubble-badge">1</div>
+    </div>
+
+    <div id="chat-window">
+      <div class="chat-header">
+        <div class="chat-avatar">👩</div>
+        <div class="chat-header-info">
+          <div class="chat-header-name" id="bot-name-display">Léa</div>
+          <div class="chat-header-status">
+            <span class="status-dot"></span> En ligne
+          </div>
+        </div>
+        <button class="chat-close" onclick="toggleChat()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+
+      <div class="chat-messages" id="chat-messages"></div>
+
+      <div class="chat-footer">
+        <div class="chat-input-row">
+          <textarea
+            class="chat-input"
+            id="chat-input"
+            placeholder="Posez votre question…"
+            rows="1"
+            onkeydown="handleKey(event)"
+            oninput="autoResize(this)"
+          ></textarea>
+          <button class="send-btn" id="send-btn" onclick="sendMessage()">
+            <svg viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
+          </button>
+        </div>
+        <div class="chat-powered">Propulsé par Claude · <span id="powered-name">Le Comptoir du Marché</span></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  // ── State ──
+  let apiKey = '';
+  let chatOpen = false;
+  let isTyping = false;
+  let welcomeShown = false;
+  let conversationHistory = [];
+
+  let config = {
+    nomBot: 'Léa',
+    nomEtab: 'Le Comptoir du Marché',
+    tel: '05 56 44 12 34',
+    resa: 'https://lecomptoirdumarche.fr/reserver',
+    faq: document.getElementById('v-faq').value
+  };
+
+  const SUGGESTIONS = [
+    'Quels sont vos horaires ?',
+    'Vous êtes ouverts dimanche ?',
+    'How do I make a reservation?',
+    '¿Tienen opciones vegetarianas?',
+    'Parking à proximité ?',
+    'Menu et prix ?'
+  ];
+
+  // ── Prompt builder ──
+  function buildSystemPrompt() {
+    return `Tu es ${config.nomBot}, l'assistant virtuel de ${config.nomEtab}.
+
+Ton rôle est de répondre aux questions des clients à partir des informations ci-dessous.
+
+RÈGLES :
+1. Détecte automatiquement la langue du client et réponds toujours dans la même langue.
+2. Sois concis et direct — une réponse courte suffit si elle est complète.
+3. Ne prends pas de réservation — si le client veut réserver, dirige-le vers : ${config.resa}
+4. Si la question dépasse tes connaissances, si le client semble frustré, ou s'il demande à parler à quelqu'un : indique le numéro ${config.tel} et propose de l'aider autrement.
+5. N'invente jamais d'information absente du bloc FAQ ci-dessous.
+6. Ne prolonge pas la conversation inutilement une fois la réponse donnée.
+
+--- INFOS_FAQ ---
+${config.faq}
+--- FIN INFOS_FAQ ---`;
+  }
+
+  // ── API ──
+  function saveKey() {
+    const val = document.getElementById('api-key').value.trim();
+    const msg = document.getElementById('status-msg');
+    if (!val.startsWith('sk-ant-')) {
+      msg.className = 'error';
+      msg.textContent = 'Format invalide — la clé doit commencer par sk-ant-';
+      return;
+    }
+    apiKey = val;
+    msg.className = 'success';
+    msg.textContent = '✓ Clé enregistrée — vous pouvez tester le chat.';
+  }
+
+  async function callClaude(userMessage) {
+    if (!apiKey) {
+      return "Veuillez d'abord entrer votre clé API Anthropic ci-dessus pour activer le chat.";
+    }
+
+    conversationHistory.push({ role: 'user', content: userMessage });
+
+    const body = {
+      model: 'claude-haiku-4-5-20251001',
+      max_tokens: 512,
+      system: buildSystemPrompt(),
+      messages: conversationHistory
+    };
+
+    try {
+      const res = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-key': apiKey,
+          'anthropic-version': '2023-06-01',
+          'anthropic-dangerous-direct-browser-access': 'true'
+        },
+        body: JSON.stringify(body)
+      });
+
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        if (res.status === 401) return "Clé API invalide ou expirée. Vérifiez dans la section configuration.";
+        return `Erreur API (${res.status}): ${err.error?.message || 'Réessayez dans un instant.'}`;
+      }
+
+      const data = await res.json();
+      const reply = data.content?.[0]?.text || 'Désolé, je n\'ai pas pu générer de réponse.';
+      conversationHistory.push({ role: 'assistant', content: reply });
+      return reply;
+
+    } catch (e) {
+      conversationHistory.pop();
+      return "Impossible de joindre l'API. Vérifiez votre connexion.";
+    }
+  }
+
+  // ── Config ──
+  function applyConfig() {
+    config = {
+      nomBot: document.getElementById('v-nom-bot').value || 'Assistant',
+      nomEtab: document.getElementById('v-nom-etab').value || 'Notre établissement',
+      tel: document.getElementById('v-tel').value || '',
+      resa: document.getElementById('v-resa').value || '',
+      faq: document.getElementById('v-faq').value || ''
+    };
+
+    document.getElementById('bot-name-display').textContent = config.nomBot;
+    document.getElementById('site-title').textContent = config.nomEtab;
+    document.getElementById('powered-name').textContent = config.nomEtab;
+
+    conversationHistory = [];
+    welcomeShown = false;
+    const msgs = document.getElementById('chat-messages');
+    msgs.innerHTML = '';
+
+    if (chatOpen) showWelcome();
+  }
+
+  // ── Chat UI ──
+  function toggleChat() {
+    chatOpen = !chatOpen;
+    const win = document.getElementById('chat-window');
+    const badge = document.querySelector('.bubble-badge');
+
+    if (chatOpen) {
+      win.classList.add('open');
+      if (badge) badge.remove();
+      if (!welcomeShown) showWelcome();
+      setTimeout(() => document.getElementById('chat-input').focus(), 300);
+    } else {
+      win.classList.remove('open');
+    }
+  }
+
+  function showWelcome() {
+    welcomeShown = true;
+    const msg = `Bonjour ! Je suis ${config.nomBot}, l'assistant de **${config.nomEtab}**. Comment puis-je vous aider ?`;
+    appendMessage('bot', msg, SUGGESTIONS);
+  }
+
+  function appendMessage(role, text, suggestions = []) {
+    const msgs = document.getElementById('chat-messages');
+
+    const wrap = document.createElement('div');
+    wrap.className = `message ${role}`;
+
+    const bubble = document.createElement('div');
+    bubble.className = 'message-bubble';
+    bubble.innerHTML = formatText(text);
+    wrap.appendChild(bubble);
+
+    if (suggestions.length) {
+      const sg = document.createElement('div');
+      sg.className = 'suggestions';
+      suggestions.forEach(s => {
+        const chip = document.createElement('button');
+        chip.className = 'suggestion-chip';
+        chip.textContent = s;
+        chip.onclick = () => {
+          sg.remove();
+          sendText(s);
+        };
+        sg.appendChild(chip);
+      });
+      wrap.appendChild(sg);
+    }
+
+    msgs.appendChild(wrap);
+    msgs.scrollTop = msgs.scrollHeight;
+    return wrap;
+  }
+
+  function formatText(text) {
+    return text
+      .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+      .replace(/\n/g, '<br>');
+  }
+
+  function showTyping() {
+    const msgs = document.getElementById('chat-messages');
+    const ind = document.createElement('div');
+    ind.className = 'typing-indicator';
+    ind.id = 'typing-ind';
+    ind.innerHTML = '<div class="typing-dot"></div><div class="typing-dot"></div><div class="typing-dot"></div>';
+    msgs.appendChild(ind);
+    msgs.scrollTop = msgs.scrollHeight;
+  }
+
+  function hideTyping() {
+    const ind = document.getElementById('typing-ind');
+    if (ind) ind.remove();
+  }
+
+  async function sendText(text) {
+    if (isTyping || !text.trim()) return;
+    isTyping = true;
+
+    const btn = document.getElementById('send-btn');
+    btn.disabled = true;
+
+    appendMessage('user', text);
+    showTyping();
+
+    const reply = await callClaude(text);
+
+    hideTyping();
+    appendMessage('bot', reply);
+    isTyping = false;
+    btn.disabled = false;
+  }
+
+  async function sendMessage() {
+    const input = document.getElementById('chat-input');
+    const text = input.value.trim();
+    input.value = '';
+    autoResize(input);
+    await sendText(text);
+    input.focus();
+  }
+
+  function handleKey(e) {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      sendMessage();
+    }
+  }
+
+  function autoResize(el) {
+    el.style.height = 'auto';
+    el.style.height = Math.min(el.scrollHeight, 100) + 'px';
+  }
+</script>
+</body>
+</html>
