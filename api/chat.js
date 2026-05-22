@@ -9,6 +9,13 @@ module.exports = async function handler(req, res) {
   try {
     const { messages, system } = req.body;
 
+    const dateStr = new Date().toLocaleDateString('fr-FR', {
+      weekday: 'long', day: 'numeric', month: 'long', year: 'numeric',
+      timeZone: 'Europe/Paris'
+    });
+    const datePrefix = `Aujourd'hui nous sommes le ${dateStr}. Utilise cette date comme référence pour toutes les questions sur les disponibilités et les jours.\n\n`;
+    const systemWithDate = datePrefix + (system || '');
+
     const response = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: {
@@ -19,7 +26,7 @@ module.exports = async function handler(req, res) {
       body: JSON.stringify({
         model: 'claude-haiku-4-5-20251001',
         max_tokens: 300,
-        system,
+        system: systemWithDate,
         messages
       })
     });
