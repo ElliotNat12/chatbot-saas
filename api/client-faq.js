@@ -30,14 +30,32 @@ module.exports = async function handler(req, res) {
   if (!slug) return res.status(400).json({ error: 'Missing slug' });
 
   if (req.method === 'GET') {
+    console.log('[client-faq] slug=', slug);
     try {
-      const file = await getGithubFile(`demo-${slug}/config.js`, token);
-      if (!file) return res.status(404).json({ error: 'Config not found' });
+      const ghPath = `demo-${slug}/config.js`;
+      console.log('[client-faq] fetching GitHub:', ghPath);
+      const ghRes = await fetch(`${GITHUB_API}/repos/${REPO}/contents/${ghPath}`, {
+        headers: { 'Authorization': `Bearer ${token}`, 'Accept': 'application/vnd.github+json' }
+      });
+      if (!ghRes.ok) {
+        const body = await ghRes.text();
+        console.error('[client-faq] GitHub error status=', ghRes.status, 'body=', body);
+        return res.status(404).json({ error: 'Config not found', detail: body });
+      }
+      const file = await ghRes.json();
+      console.log('[client-faq] GitHub ok, sha=', file.sha, 'size=', file.size);
+
       const source = Buffer.from(file.content, 'base64').toString('utf-8');
+      console.log('[client-faq] source length=', source.length);
       const config = parseConfig(source);
-      if (!config) return res.status(422).json({ error: 'Could not parse config.js' });
+      if (!config) {
+        console.error('[client-faq] parseConfig failed, source preview=', source.slice(0, 200));
+        return res.status(422).json({ error: 'Could not parse config.js' });
+      }
+      console.log('[client-faq] faq length=', (config.faq || '').length);
       return res.status(200).json({ faq: config.faq || '', config });
     } catch (err) {
+      console.error('[client-faq] GET exception:', err.message);
       return res.status(500).json({ error: err.message });
     }
   }
