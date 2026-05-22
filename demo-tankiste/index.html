@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Le Tankiste So Char Away — Conduire un blindé en Normandie</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root { --green: #4a5e3a; --cream: #f5f4f0; --warm: #eceae2; --text: #1c1c1c; --muted: #6b6b5f; }
+    body { font-family: 'DM Sans', sans-serif; background: var(--cream); color: var(--text); line-height: 1.6; }
+    nav { background: var(--green); padding: 0 2rem; display: flex; align-items: center; justify-content: space-between; height: 64px; }
+    .nav-logo { font-family: 'Playfair Display', serif; font-size: 20px; color: var(--cream); letter-spacing: .01em; }
+    .nav-links { display: flex; gap: 2rem; list-style: none; }
+    .nav-links a { color: rgba(255,255,255,.75); text-decoration: none; font-size: 14px; }
+    .hero { background: var(--green); color: var(--cream); padding: 5rem 2rem 4rem; text-align: center; }
+    .hero h1 { font-family: 'Playfair Display', serif; font-size: clamp(2.4rem, 6vw, 4rem); font-weight: 600; line-height: 1.15; margin-bottom: 1rem; }
+    .hero h1 em { font-style: italic; font-weight: 400; color: rgba(255,255,255,.7); }
+    .hero p { font-size: 16px; color: rgba(255,255,255,.65); max-width: 480px; margin: 0 auto 2rem; }
+    .hero-cta { display: inline-block; background: var(--cream); color: var(--green); padding: 12px 24px; border-radius: 40px; text-decoration: none; font-weight: 500; font-size: 14px; }
+    .section { padding: 3.5rem 2rem; max-width: 900px; margin: 0 auto; }
+    h2 { font-family: 'Playfair Display', serif; font-size: 1.9rem; font-weight: 400; margin-bottom: 1.5rem; }
+    .section-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1.5rem; }
+    .info-card { background: #fff; border-radius: 14px; padding: 1.5rem; border: 1px solid rgba(0,0,0,.06); }
+    .info-card-icon { width: 40px; height: 40px; border-radius: 10px; background: var(--warm); display: flex; align-items: center; justify-content: center; font-size: 20px; margin-bottom: 1rem; }
+    .info-card h3 { font-size: 15px; font-weight: 500; margin-bottom: .4rem; }
+    .info-card p { font-size: 13.5px; color: var(--muted); line-height: 1.55; }
+    .packages-section { background: var(--warm); padding: 3.5rem 2rem; }
+    .packages-inner { max-width: 900px; margin: 0 auto; }
+    .packages-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 1rem; margin-top: 2rem; }
+    .package-item { background: #fff; border-radius: 12px; padding: 1.25rem 1.5rem; display: flex; justify-content: space-between; align-items: baseline; gap: 1rem; }
+    .package-item-name { font-size: 14px; font-weight: 500; }
+    .package-item-desc { font-size: 12px; color: var(--muted); margin-top: 2px; }
+    .package-item-price { font-size: 14px; font-weight: 500; color: var(--green); white-space: nowrap; }
+    footer { background: var(--green); color: rgba(255,255,255,.6); text-align: center; padding: 2rem; font-size: 13px; }
+    footer strong { color: rgba(255,255,255,.9); }
+  </style>
+</head>
+<body>
+  <nav>
+    <span class="nav-logo">Le Tankiste So Char Away</span>
+    <ul class="nav-links">
+      <li><a href="#">Packages</a></li>
+      <li><a href="#">Réservation</a></li>
+      <li><a href="#">Accès</a></li>
+      <li><a href="#">Contact</a></li>
+    </ul>
+  </nav>
+
+  <section class="hero">
+    <h1>Conduisez un <em>vrai blindé</em><br>en forêt de Brotonne</h1>
+    <p>Une expérience unique en Normandie — véhicules militaires britanniques historiques.</p>
+    <a href="https://letankistesocharaway.fr/en/booking" class="hero-cta">Réserver une session →</a>
+  </section>
+
+  <section class="section">
+    <h2>Informations pratiques</h2>
+    <div class="section-grid">
+      <div class="info-card"><div class="info-card-icon">🗓️</div><h3>Saison</h3><p>Avril à septembre 2026<br>Ven, Sam, Dim : 09h–18h<br>Sur réservation uniquement</p></div>
+      <div class="info-card"><div class="info-card-icon">📍</div><h3>Adresse</h3><p>Route d'Aizier<br>76940 Vatteville-la-Rue<br>Entre Rouen et Le Havre</p></div>
+      <div class="info-card"><div class="info-card-icon">👥</div><h3>Public</h3><p>Dès 5 ans avec adulte<br>Max 8 passagers par véhicule<br>Permis requis pour le Driving</p></div>
+      <div class="info-card"><div class="info-card-icon">📞</div><h3>Contact</h3><p>+33 6 95 05 73 98<br>contact@letankistesocharaway.fr</p></div>
+    </div>
+  </section>
+
+  <section class="packages-section">
+    <div class="packages-inner">
+      <h2>Nos packages</h2>
+      <div class="packages-grid">
+        <div class="package-item"><div><div class="package-item-name">Driving 15 min</div><div class="package-item-desc">Vous tenez le volant, briefing inclus</div></div><div class="package-item-price">80€/pers</div></div>
+        <div class="package-item"><div><div class="package-item-name">Driving 30 min</div><div class="package-item-desc">Session prolongée avec briefing professionnel</div></div><div class="package-item-price">140€/pers</div></div>
+        <div class="package-item"><div><div class="package-item-name">Ride 15 min</div><div class="package-item-desc">Passager à bord avec visite guidée</div></div><div class="package-item-price">30€/pers</div></div>
+        <div class="package-item"><div><div class="package-item-name">Ride 30 min</div><div class="package-item-desc">Balade passager longue durée</div></div><div class="package-item-price">40€/pers</div></div>
+      </div>
+    </div>
+  </section>
+
+  <footer><strong>Le Tankiste So Char Away</strong> — Route d'Aizier, 76940 Vatteville-la-Rue — +33 6 95 05 73 98</footer>
+
+  <script src="../widget/chatbot.js"></script>
+  <script src="config.js"></script>
+</body>
+</html>
