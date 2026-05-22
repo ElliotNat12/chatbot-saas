@@ -123,25 +123,39 @@ async function generateForClient(slug, businessName, force) {
     }
   }
   const unanswered = Object.values(counts).sort((a, b) => b.count - a.count);
+  const fewConversations = conversations.length < 3;
 
-  const prompt = `Tu es un expert en optimisation de chatbots IA pour petites entreprises. Voici les données d'utilisation du chatbot de ${businessName} cette semaine :
+  const contextSection = fewConversations
+    ? `DONNÉES DE CONVERSATIONS : insuffisantes (${conversations.length} conversation(s) cette semaine). Base tes suggestions UNIQUEMENT sur la FAQ actuelle et le type de business détecté.`
+    : `CONVERSATIONS COMPLÈTES (${conversations.length} cette semaine) :
+${JSON.stringify(conversations.slice(0, 20), null, 2)}
+
+QUESTIONS SANS RÉPONSE IDENTIFIÉES :
+${unanswered.map(q => `- "${q.question}" (${q.count} fois)`).join('\n') || '(aucune)'}`;
+
+  const prompt = `Tu es un expert en optimisation de chatbots IA pour petites entreprises. Voici les données du chatbot de ${businessName} :
 
 FAQ ACTUELLE :
 ${faq || '(aucune FAQ configurée)'}
 
-CONVERSATIONS COMPLÈTES (${conversations.length} cette semaine) :
-${JSON.stringify(conversations.slice(0, 20), null, 2)}
+${contextSection}
 
-QUESTIONS SANS RÉPONSE IDENTIFIÉES :
-${unanswered.map(q => `- "${q.question}" (${q.count} fois)`).join('\n') || '(aucune)'}
+Analyse ces données et génère entre 10 et 15 suggestions d'amélioration de la FAQ.
 
-Analyse ces données et génère entre 10 et 15 suggestions d'amélioration de la FAQ. Pour chaque suggestion, fournis :
-1. La question ou le sujet manquant
-2. La réponse suggérée à ajouter dans la FAQ
-3. La source (quelle conversation ou question a révélé ce manque)
+RÈGLES ABSOLUES pour les faq_entry :
+- Utilise UNIQUEMENT les vraies informations présentes dans la FAQ (nom de l'entreprise, numéro de téléphone réel, services listés, tarifs réels, horaires réels).
+- INTERDIT : les placeholders comme [X], [votre nom], [domaine], [contact], [téléphone], [adresse], [tarif], [lien], [insérer ici] ou tout texte entre crochets.
+- Si une information manque vraiment dans la FAQ, écris littéralement "À compléter" (sans crochets) — jamais un placeholder.
+- Les réponses doivent être directement utilisables par un visiteur, avec les vraies données du business.
+${fewConversations ? '- Puisqu\'il y a peu de conversations, concentre-toi sur les sujets que la FAQ actuelle traite mal ou pas du tout, en te basant sur le type de business détecté.' : ''}
+
+Pour chaque suggestion, fournis :
+1. La question ou le sujet manquant (suggestion)
+2. Le texte exact à ajouter dans la FAQ avec les vraies infos (faq_entry)
+3. La source qui a révélé ce manque — conversation, question fréquente, ou "Analyse de la FAQ" si peu de données (question_source)
 
 Réponds UNIQUEMENT en JSON valide, tableau d'objets avec ces champs :
-[{"suggestion": "texte court décrivant ce qui manque", "faq_entry": "le texte exact à ajouter dans la FAQ", "question_source": "la question du visiteur qui a révélé ce manque"}]`;
+[{"suggestion": "texte court décrivant ce qui manque", "faq_entry": "le texte exact à ajouter dans la FAQ", "question_source": "la source"}]`;
 
   const aiRes = await fetch('https://api.anthropic.com/v1/messages', {
     method: 'POST',
