@@ -90,10 +90,10 @@ EMOJI: [UN SEUL emoji unicode, rien d'autre sur cette ligne : restaurant/cafe=ðŸ
 
 Puis ces sections en francais (omets si absent) :
 
-CONTACT : telephone, email, adresse, lien de reservation
+CONTACT : telephone (ex: Telephone: +33 6 XX XX XX XX), email, adresse, lien de reservation
 SERVICES : liste des prestations
 TARIFS : prix par formule
-HORAIRES : jours et heures
+HORAIRES : jours et heures d'ouverture uniquement, format concis (ex: Lundi-Vendredi 9h-18h, Samedi 10h-17h)
 CONDITIONS : restrictions, prerequis
 FAQ : questions frequentes
 

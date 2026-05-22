@@ -287,10 +287,10 @@
       document.getElementById('botName').value = detectedName;
     }
 
-    // Phone: +33 6 XX XX XX XX or 0X XX XX XX XX
-    const phoneMatch = faq.match(/(?:\+33[\s.]?|0033[\s.]?)[1-9](?:[\s.\-]?\d{2}){4}|0[1-9](?:[\s.\-]?\d{2}){4}/);
+    // Phone: look for label "Telephone:", "Tel:", "Téléphone:" in FAQ
+    const phoneMatch = faq.match(/t[ée]l(?:[ée]phone)?\s*:\s*([+\d\s().]{8,20})/i);
     if (phoneMatch) {
-      document.getElementById('phone').value = phoneMatch[0].trim();
+      document.getElementById('phone').value = phoneMatch[1].trim();
     }
 
     // Booking URL: contains booking/reservation/reserver/contact keywords
@@ -300,15 +300,14 @@
       document.getElementById('bookingUrl').value = bookingMatch[0].replace(/[.,)]+$/, '');
     }
 
-    // Hours: find lines with day names and extract a short summary
-    const dayPattern = /(?:lun(?:di)?|mar(?:di)?|mer(?:credi)?|jeu(?:di)?|ven(?:dredi)?|sam(?:edi)?|dim(?:anche)?|mon(?:day)?|tue(?:sday)?|wed(?:nesday)?|thu(?:rsday)?|fri(?:day)?|sat(?:urday)?|sun(?:day)?)[^\n]{0,80}/gi;
-    const hourLines = faq.match(dayPattern) || [];
-    if (hourLines.length) {
-      const summary = hourLines
-        .slice(0, 2)
-        .map(l => l.trim().replace(/\s+/g, ' '))
-        .join(', ');
-      document.getElementById('phoneHours').value = summary.slice(0, 80);
+    // Hours: extract content of HORAIRES section (until next section or end)
+    const horairesMatch = faq.match(/^HORAIRES\s*:\s*\n?([\s\S]*?)(?=\n[A-Z]{3,}[\s]*:|$)/im);
+    if (horairesMatch) {
+      const horairesLines = horairesMatch[1].trim().split('\n')
+        .map(l => l.trim()).filter(Boolean).slice(0, 2);
+      if (horairesLines.length) {
+        document.getElementById('phoneHours').value = horairesLines.join(', ').slice(0, 80);
+      }
     }
   }
 
