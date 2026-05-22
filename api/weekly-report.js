@@ -149,7 +149,7 @@ ${summary}`
         'Authorization': `Bearer ${process.env.RESEND_API_KEY}`
       },
       body: JSON.stringify({
-        from: 'ChatbotSaaS <reports@chatbotsaas.fr>',
+        from: 'ChatbotSaaS <onboarding@resend.dev>',
         to: [REPORT_EMAIL],
         subject: `Rapport hebdomadaire ChatbotSaaS — ${weekLabel}`,
         html: emailHtml
