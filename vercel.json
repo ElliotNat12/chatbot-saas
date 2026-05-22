@@ -1,0 +1,8 @@
+{
+  "crons": [
+    {
+      "path": "/api/weekly-report?secret=report-secret-elliot-2026",
+      "schedule": "0 7 * * 1"
+    }
+  ]
+}
