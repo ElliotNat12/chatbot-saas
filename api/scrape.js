@@ -1,4 +1,4 @@
-const GLOBAL_TIMEOUT_MS = 45_000;
+const GLOBAL_TIMEOUT_MS = 90_000;
 const POLL_INTERVAL_MS = 2_000;
 
 module.exports = async function handler(req, res) {
@@ -24,7 +24,7 @@ module.exports = async function handler(req, res) {
       },
       body: JSON.stringify({
         url,
-        limit: 10,
+        limit: 5,
         scrapeOptions: { formats: ['markdown'] }
       })
     });
