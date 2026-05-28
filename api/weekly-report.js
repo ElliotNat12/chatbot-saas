@@ -4,7 +4,7 @@ module.exports = async function handler(req, res) {
   if (req.method !== 'GET') return res.status(405).json({ error: 'Method not allowed' });
 
   const token = req.query.secret || req.headers['x-report-secret'];
-  if (token !== process.env.REPORT_SECRET) {
+  if (!process.env.REPORT_SECRET || !token || token !== process.env.REPORT_SECRET) {
     return res.status(401).json({ error: 'Unauthorized' });
   }
 

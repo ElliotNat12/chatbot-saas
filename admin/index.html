@@ -504,11 +504,10 @@ const S = {
   testerSlug: null,
   testerBusinessName: null,
   draggedId: null,
-  notesTimers: {}
+  notesTimers: {},
+  adminSecret: null
 };
 
-const ADMIN_PASSWORD = 'admin2026';
-const ADMIN_SECRET   = 'admin2026';
 const OFFER_MRR = { Starter: 49, Leads: 149, Premium: 299 };
 const NEXT_STATUS = { prospect: 'demo', demo: 'client' };
 const STATUS_LABELS = { prospect: 'Prospect', demo: 'Démo envoyée', client: 'Client actif' };
@@ -532,7 +531,7 @@ function showErr(id, msg) { const e=document.getElementById(id); e.textContent=m
 function hideErr(id) { const e=document.getElementById(id); e.textContent=''; e.classList.remove('visible'); }
 
 async function apiFetch(path, opts = {}) {
-  const headers = { 'Content-Type': 'application/json', 'x-admin-secret': ADMIN_SECRET, ...(opts.headers || {}) };
+  const headers = { 'Content-Type': 'application/json', 'x-admin-secret': S.adminSecret, ...(opts.headers || {}) };
   const res = await fetch(path, { ...opts, headers });
   return res;
 }
@@ -541,12 +540,27 @@ async function apiFetch(path, opts = {}) {
 // PASSWORD
 // ════════════════════════════════
 document.getElementById('pw-input').addEventListener('keydown', e => { if (e.key === 'Enter') checkPassword(); });
-function checkPassword() {
-  if (document.getElementById('pw-input').value === ADMIN_PASSWORD) {
-    document.getElementById('pw-overlay').classList.add('hidden');
-    initGuide();
-  } else {
-    document.getElementById('pw-error').textContent = 'Mot de passe incorrect.';
+async function checkPassword() {
+  const pw = document.getElementById('pw-input').value;
+  if (!pw) { document.getElementById('pw-error').textContent = 'Entrez un mot de passe.'; return; }
+  const btn = document.querySelector('#pw-overlay .btn-primary');
+  btn.disabled = true; btn.textContent = 'Connexion…';
+  try {
+    const r = await fetch('/api/crm', { headers: { 'x-admin-secret': pw } });
+    if (r.ok) {
+      S.adminSecret = pw;
+      document.getElementById('pw-overlay').classList.add('hidden');
+      initGuide();
+      loadGlobalView();
+    } else if (r.status === 401) {
+      document.getElementById('pw-error').textContent = 'Mot de passe incorrect.';
+    } else {
+      document.getElementById('pw-error').textContent = 'Erreur serveur. Réessayez.';
+    }
+  } catch {
+    document.getElementById('pw-error').textContent = 'Erreur de connexion.';
+  } finally {
+    btn.disabled = false; btn.textContent = 'Accéder';
   }
 }
 
@@ -1201,8 +1215,7 @@ function toggleStep(id, el) {
   localStorage.setItem('step-' + id, done ? '1' : '0');
 }
 
-// ── Auto-load global view on first render ──
-loadGlobalView();
+// ── Global view loads after successful login (in checkPassword) ──
 </script>
 </body>
 </html>

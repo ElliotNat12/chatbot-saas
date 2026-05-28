@@ -1,3 +1,26 @@
+const rateLimitMap = new Map();
+const RATE_LIMIT = 30;
+const RATE_WINDOW_MS = 60_000;
+
+function getClientIp(req) {
+  const xff = req.headers['x-forwarded-for'];
+  return (xff ? xff.split(',')[0] : req.socket?.remoteAddress || 'unknown').trim();
+}
+
+function isRateLimited(ip) {
+  const now = Date.now();
+  const ts = (rateLimitMap.get(ip) || []).filter(t => now - t < RATE_WINDOW_MS);
+  if (ts.length >= RATE_LIMIT) return true;
+  ts.push(now);
+  rateLimitMap.set(ip, ts);
+  if (rateLimitMap.size > 5000) {
+    for (const [k, v] of rateLimitMap) {
+      if (v.every(t => now - t >= RATE_WINDOW_MS)) rateLimitMap.delete(k);
+    }
+  }
+  return false;
+}
+
 module.exports = async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
@@ -6,9 +29,17 @@ module.exports = async function handler(req, res) {
   if (req.method === 'OPTIONS') return res.status(200).end();
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
-  try {
-    const { messages, system } = req.body;
+  const ip = getClientIp(req);
+  if (isRateLimited(ip)) {
+    return res.status(429).json({ error: 'Too many requests' });
+  }
 
+  const { messages, system } = req.body || {};
+  if (!Array.isArray(messages) || messages.length === 0 || messages.length > 50) {
+    return res.status(400).json({ error: 'Invalid messages' });
+  }
+
+  try {
     const dateStr = new Date().toLocaleDateString('fr-FR', {
       weekday: 'long', day: 'numeric', month: 'long', year: 'numeric',
       timeZone: 'Europe/Paris'

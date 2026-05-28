@@ -133,8 +133,9 @@
     #cb-send:hover { transform: scale(1.08); }
     #cb-send:disabled { opacity: .4; cursor: default; transform: none; }
     #cb-send svg { width: 16px; height: 16px; fill: #fff; }
-    #cb-powered { text-align: center; font-size: 10px; color: #cbd5e1; padding: 6px; background: #fff; font-family: var(--cb-font); }
+    #cb-powered { text-align: center; font-size: 10px; color: #cbd5e1; padding: 6px 6px 2px; background: #fff; font-family: var(--cb-font); }
     #cb-powered a { color: #94a3b8; text-decoration: none; }
+    #cb-rgpd { text-align: center; font-size: 10px; color: #cbd5e1; padding: 2px 6px 7px; background: #fff; font-family: var(--cb-font); }
     .cb-lead-form {
       background: #fff; border-radius: 4px 16px 16px 16px;
       box-shadow: 0 1px 3px rgba(0,0,0,.06); padding: 14px 16px;
@@ -192,6 +193,7 @@
       #cb-suggestions { background: #16162a; }
       .cb-chip { background: #3a3a5c; border-color: #4a4a6a; color: #e2e8f0; }
       #cb-powered { background: #1e1e2e; color: #4a4a6a; }
+      #cb-rgpd { background: #1e1e2e; color: #4a4a6a; }
       .cb-lead-form { background: #2a2a3e; }
       .cb-lead-form input { background: #1e1e2e; border-color: #3a3a5c; color: #e2e8f0; }
       .cb-lead-form label { color: #94a3b8; }
@@ -228,6 +230,7 @@
           </button>
         </div>
         <div id="cb-powered">Propulsé par <a href="#" target="_blank">${cfg.poweredBy || 'ChatbotSaaS'}</a></div>
+        <div id="cb-rgpd">Données personnelles traitées conformément au RGPD.</div>
       </div>
     `;
   }
@@ -402,6 +405,7 @@
           messages: history
         })
       });
+      if (res.status === 429) throw new Error('rate_limit');
       if (!res.ok) throw new Error('API error ' + res.status);
       const apiData = await res.json();
       const rawReply = apiData.content?.[0]?.text || '...';
@@ -441,7 +445,10 @@
         if (showForm) showLeadForm();
       } catch (e) {
         removeTyping();
-        addMsg(cfg.errorMessage || 'Désolé, une erreur s\'est produite.', 'bot');
+        const msg = e.message === 'rate_limit'
+          ? (detectLanguage() === 'EN' ? 'Too many messages. Please wait a moment before trying again.' : 'Trop de messages en peu de temps. Attendez un instant avant de réessayer.')
+          : (cfg.errorMessage || 'Désolé, une erreur s\'est produite.');
+        addMsg(msg, 'bot');
       } finally {
         isTyping = false; sendBtn.disabled = false; inputEl.focus();
       }

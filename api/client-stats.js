@@ -5,7 +5,8 @@ module.exports = async function handler(req, res) {
   const { businessName, days = '7' } = req.query;
   if (!businessName) return res.status(400).json({ error: 'Missing businessName' });
 
-  const since = new Date(Date.now() - parseInt(days) * 24 * 60 * 60 * 1000).toISOString();
+  const daysNum = Math.min(Math.max(parseInt(days) || 7, 1), 90);
+  const since = new Date(Date.now() - daysNum * 24 * 60 * 60 * 1000).toISOString();
 
   try {
     const convRes = await fetch(

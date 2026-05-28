@@ -37,9 +37,36 @@ async function ghGet(path) {
 }
 
 function parseConfig(source) {
-  const m = source.match(/ChatbotSaaS\.init\(([\s\S]*)\);\s*$/);
-  if (!m) return null;
-  try { return JSON.parse(m[1]); } catch { return null; }
+  const wrapper = source.match(/ChatbotSaaS\.init\(([\s\S]*)\);\s*$/);
+  if (wrapper) {
+    try {
+      const config = JSON.parse(wrapper[1]);
+      if (config.faq) return config;
+    } catch (_) {}
+  }
+  // Backtick template literal — faq: `...`
+  const btMatch = source.match(/faq\s*:\s*`([\s\S]*?)`/);
+  if (btMatch) {
+    if (wrapper) {
+      try {
+        const sanitized = source.replace(/faq\s*:\s*`[\s\S]*?`/, '"faq": "__FAQ__"');
+        const sm = sanitized.match(/ChatbotSaaS\.init\(([\s\S]*)\);\s*$/);
+        if (sm) {
+          const config = JSON.parse(sm[1]);
+          config.faq = btMatch[1];
+          return config;
+        }
+      } catch (_) {}
+    }
+    return { faq: btMatch[1] };
+  }
+  // Single-quoted faq
+  const sqMatch = source.match(/faq\s*:\s*'([\s\S]*?)'/);
+  if (sqMatch) return { faq: sqMatch[1] };
+  // Double-quoted faq (escaped JSON string)
+  const dqMatch = source.match(/"faq"\s*:\s*"((?:[^"\\]|\\.)*)"/);
+  if (dqMatch) return { faq: dqMatch[1].replace(/\\n/g, '\n').replace(/\\"/g, '"') };
+  return null;
 }
 
 async function ghPut(path, content, sha, message) {
