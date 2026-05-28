@@ -138,7 +138,7 @@ async function generateForClient(slug, businessName, force) {
   const since = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
   const [convRes, configFile] = await Promise.all([
     fetch(
-      `${process.env.SUPABASE_URL}/rest/v1/conversations?business_name=eq.${encodeURIComponent(businessName)}&created_at=gte.${since}&select=messages,unanswered_questions`,
+      `${process.env.SUPABASE_URL}/rest/v1/conversations?business_name=eq.${encodeURIComponent(businessName)}&created_at=gte.${since}&processed_at=is.null&select=messages,unanswered_questions`,
       { headers: sbH() }
     ),
     ghGet(`demo-${slug}/config.js`)
@@ -245,6 +245,15 @@ Réponds UNIQUEMENT en JSON valide, tableau d'objets avec ces champs :
     const e = await insRes.text();
     throw new Error(`Supabase insert error: ${e}`);
   }
+
+  await fetch(
+    `${process.env.SUPABASE_URL}/rest/v1/conversations?business_name=eq.${encodeURIComponent(businessName)}&processed_at=is.null`,
+    {
+      method: 'PATCH',
+      headers: { ...sbH(), 'Prefer': 'return=minimal' },
+      body: JSON.stringify({ processed_at: new Date().toISOString() })
+    }
+  );
 
   const inserted = await insRes.json();
   return { suggestions: Array.isArray(inserted) ? inserted : rows, count: rows.length, from_cache: false };
