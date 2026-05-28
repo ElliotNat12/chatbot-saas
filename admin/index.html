@@ -960,7 +960,7 @@ async function onClientSelect(slug) {
   document.getElementById('tester-loading').style.display = 'inline';
 
   // Iframe
-  const demoUrl = `https://chatbot-saas-nine.vercel.app/demo-${slug}/`;
+  const demoUrl = `${window.location.origin}/demo-${slug}/`;
   document.getElementById('iframe-url-label').textContent = demoUrl;
   document.getElementById('iframe-open-link').href = demoUrl;
   document.getElementById('t-iframe').src = demoUrl;
@@ -1245,7 +1245,7 @@ function toggleStep(id, el) {
 // ════════════════════════════════
 function openQModal() {
   if (!S.testerSlug) return;
-  const link = 'https://chatbot-saas-nine.vercel.app/api/onboarding-form?slug=' + S.testerSlug;
+  const link = window.location.origin + '/api/onboarding-form?slug=' + S.testerSlug;
   document.getElementById('q-link').value = link;
   document.getElementById('q-msg').value =
     'Bonjour !\n\nPour que votre chatbot réponde encore mieux à vos clients, pourriez-vous remplir ce petit formulaire (5 min) ?\n\n' +

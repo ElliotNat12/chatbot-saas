@@ -1,6 +1,6 @@
 const REPO = 'ElliotNat12/chatbot-saas';
 const GITHUB_API = 'https://api.github.com';
-const VERCEL_URL = 'https://chatbot-saas-nine.vercel.app';
+const VERCEL_URL = process.env.VERCEL_URL || 'https://chatbot-saas-nine.vercel.app';
 
 module.exports = async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
