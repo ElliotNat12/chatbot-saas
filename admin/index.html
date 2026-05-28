@@ -268,6 +268,28 @@
   </div>
 </div>
 
+<!-- ── Questionnaire modal ── -->
+<div class="modal-overlay" id="questionnaire-modal">
+  <div class="modal" style="max-width:480px">
+    <div class="modal-title">📋 Questionnaire client</div>
+    <p style="font-size:13px;color:var(--muted);margin-bottom:1.25rem;line-height:1.6;">Envoyez ce lien à votre client. En remplissant le formulaire, il enrichira automatiquement la FAQ de son chatbot.</p>
+    <div class="field">
+      <label>Lien du questionnaire</label>
+      <div style="display:flex;gap:.5rem;margin-top:.35rem">
+        <input type="text" id="q-link" readonly style="font-size:12.5px;cursor:text;color:var(--muted)" />
+        <button class="btn btn-secondary" id="q-copy-btn" onclick="copyQLink()" style="white-space:nowrap;flex-shrink:0">Copier</button>
+      </div>
+    </div>
+    <div class="field" style="margin-top:1rem">
+      <label>Message type (SMS / WhatsApp)</label>
+      <textarea id="q-msg" rows="5" readonly style="margin-top:.35rem;font-size:12.5px;color:var(--muted);resize:none;cursor:text"></textarea>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeQModal()">Fermer</button>
+    </div>
+  </div>
+</div>
+
 <header>
   <h1>ChatbotSaaS Admin</h1>
   <span id="header-date"></span>
@@ -377,6 +399,7 @@
         <option value="">— Sélectionner un client —</option>
       </select>
       <span id="tester-loading" style="font-size:12px;color:var(--muted);display:none"><span class="spinner spinner-dark"></span> Chargement…</span>
+      <button class="btn btn-secondary" id="q-btn" onclick="openQModal()" style="display:none;white-space:nowrap">📋 Questionnaire client</button>
     </div>
 
     <div id="tester-content" style="display:none">
@@ -930,6 +953,8 @@ function populateTesterSelect() {
 async function onClientSelect(slug) {
   document.getElementById('tester-content').style.display = slug ? 'block' : 'none';
   document.getElementById('tester-empty').style.display = slug ? 'none' : 'block';
+  const qBtn = document.getElementById('q-btn');
+  if (qBtn) qBtn.style.display = slug ? 'inline-block' : 'none';
   if (!slug) return;
   S.testerSlug = slug;
   document.getElementById('tester-loading').style.display = 'inline';
@@ -1214,6 +1239,35 @@ function toggleStep(id, el) {
   el.querySelector('.step-check').textContent = done ? '✓' : '';
   localStorage.setItem('step-' + id, done ? '1' : '0');
 }
+
+// ════════════════════════════════
+// QUESTIONNAIRE MODAL
+// ════════════════════════════════
+function openQModal() {
+  if (!S.testerSlug) return;
+  const link = 'https://chatbot-saas-nine.vercel.app/api/onboarding-form?slug=' + S.testerSlug;
+  document.getElementById('q-link').value = link;
+  document.getElementById('q-msg').value =
+    'Bonjour !\n\nPour que votre chatbot réponde encore mieux à vos clients, pourriez-vous remplir ce petit formulaire (5 min) ?\n\n' +
+    link + '\n\nMerci d\'avance !';
+  document.getElementById('questionnaire-modal').classList.add('visible');
+}
+function closeQModal() { document.getElementById('questionnaire-modal').classList.remove('visible'); }
+async function copyQLink() {
+  const link = document.getElementById('q-link').value;
+  const btn = document.getElementById('q-copy-btn');
+  try {
+    await navigator.clipboard.writeText(link);
+  } catch {
+    const input = document.getElementById('q-link');
+    input.select(); document.execCommand('copy');
+  }
+  btn.textContent = '✓ Copié';
+  setTimeout(() => { btn.textContent = 'Copier'; }, 1500);
+}
+document.getElementById('questionnaire-modal').addEventListener('click', e => {
+  if (e.target === e.currentTarget) closeQModal();
+});
 
 // ── Global view loads after successful login (in checkPassword) ──
 </script>
