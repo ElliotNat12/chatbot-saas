@@ -208,7 +208,8 @@ Réponds UNIQUEMENT en JSON valide, tableau d'objets avec ces champs :
   });
 
   if (!aiRes.ok) throw new Error(`Claude API error: ${aiRes.status}`);
-  const rawText = (await aiRes.json()).content?.[0]?.text || '';
+  const rawText = ((await aiRes.json()).content?.[0]?.text || '')
+    .replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
 
   let parsed;
   try {
