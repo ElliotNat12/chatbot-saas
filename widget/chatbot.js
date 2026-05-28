@@ -295,6 +295,23 @@
     function now() {
       return new Date().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
     }
+    function linkifyPhones(text, frag) {
+      const phoneRegex = /(\+33\s?[\d\s]{8,}|0[\d\s]{9,})/g;
+      const parts = text.split(phoneRegex);
+      parts.forEach((part, i) => {
+        if (!part) return;
+        if (i % 2 === 1) {
+          const a = document.createElement('a');
+          a.href = 'tel:' + part.replace(/\s/g, '');
+          a.textContent = part;
+          a.style.cssText = 'font-weight:600;color:var(--cb-accent);text-decoration:none;white-space:nowrap';
+          frag.appendChild(a);
+        } else {
+          frag.appendChild(document.createTextNode(part));
+        }
+      });
+    }
+
     function addMsg(text, type) {
       const isEscalate = type === 'bot' && cfg.phone && text.includes(cfg.phone);
       const div = document.createElement('div');
@@ -305,7 +322,7 @@
       if (urlMatch) {
         const url = urlMatch[1];
         const label = /booking|reservation/i.test(url) ? 'Réserver maintenant' : 'En savoir plus';
-        div.textContent = text.replace(urlRegex, '').trim();
+        linkifyPhones(text.replace(urlRegex, '').trim(), div);
         const btn = document.createElement('a');
         btn.href = url;
         btn.target = '_blank';
@@ -313,6 +330,8 @@
         btn.textContent = label;
         btn.style.cssText = 'background:var(--cb-accent);color:#fff;border:none;border-radius:20px;padding:8px 16px;font-size:13px;cursor:pointer;margin-top:8px;display:inline-block;text-decoration:none;';
         div.appendChild(btn);
+      } else if (type === 'bot') {
+        linkifyPhones(text, div);
       } else {
         div.textContent = text;
       }
@@ -603,6 +622,7 @@ ${cfg.faq || ''}
 - Jamais de texte en gras (pas de **)
 - Jamais de point d'exclamation sauf si le contexte l'exige vraiment
 - Une seule question par message, maximum
+- Ne jamais couper les informations de contact sur plusieurs lignes : toujours les donner sur une seule ligne continue ou séparées par une virgule, jamais par un retour à la ligne
 
 ## LONGUEUR DES RÉPONSES
 - 2 à 3 phrases maximum, toujours
