@@ -20,19 +20,40 @@
       background: var(--cb-accent); border: none; cursor: pointer;
       display: flex; align-items: center; justify-content: center;
       box-shadow: 0 4px 24px rgba(0,0,0,.18); z-index: 9998;
-      transition: transform .2s, box-shadow .2s;
+      transition: transform .2s, box-shadow .2s; overflow: hidden;
     }
     #cb-launcher:hover { transform: scale(1.07); box-shadow: 0 6px 28px rgba(0,0,0,.22); }
-    #cb-launcher svg { width: 26px; height: 26px; fill: #fff; transition: opacity .2s; }
+    #cb-launcher svg { width: 26px; height: 26px; fill: #fff; transition: opacity .2s; flex-shrink: 0; }
     #cb-launcher .cb-icon-close { display: none; }
     #cb-launcher.open .cb-icon-chat { display: none; }
     #cb-launcher.open .cb-icon-close { display: block; }
+    #cb-launcher-img {
+      width: 100%; height: 100%; object-fit: cover;
+      position: absolute; top: 0; left: 0; border-radius: 50%;
+    }
+    #cb-launcher.cb-has-avatar:not(.open) .cb-icon-chat { display: none; }
+    #cb-launcher.cb-has-avatar.open #cb-launcher-img { display: none; }
     #cb-badge {
       position: absolute; top: -2px; right: -2px;
       width: 14px; height: 14px; background: #ef4444;
-      border-radius: 50%; border: 2px solid #fff; display: none;
+      border-radius: 50%; border: 2px solid #fff; display: none; z-index: 1;
     }
     #cb-badge.visible { display: block; }
+    #cb-launcher-badge {
+      position: fixed; bottom: 34px; right: 88px;
+      background: #fff; color: #1a1a1a; border-radius: 20px;
+      padding: 8px 14px; font-size: 13px; font-family: var(--cb-font);
+      box-shadow: 0 2px 12px rgba(0,0,0,.14); white-space: nowrap;
+      z-index: 9997; opacity: 0; transition: opacity .3s ease;
+      pointer-events: none; cursor: pointer; line-height: 1.4;
+    }
+    #cb-launcher-badge.visible { opacity: 1; pointer-events: auto; }
+    #cb-launcher-badge::after {
+      content: ''; position: absolute; right: -6px; top: 50%;
+      transform: translateY(-50%);
+      border-left: 7px solid #fff;
+      border-top: 5px solid transparent; border-bottom: 5px solid transparent;
+    }
     #cb-window {
       position: fixed; bottom: 92px; right: 24px;
       width: 360px; max-height: 560px; background: #fff;
@@ -70,6 +91,44 @@
     .cb-lang-btn.active { opacity: 1; }
     #cb-close-btn { background: none; border: none; color: rgba(255,255,255,.7); cursor: pointer; font-size: 20px; padding: 2px; line-height: 1; transition: color .15s; }
     #cb-close-btn:hover { color: #fff; }
+    #cb-home {
+      display: none; flex-direction: column; flex: 1;
+      position: relative; overflow: hidden;
+    }
+    #cb-home.active { display: flex; }
+    #cb-home.cb-exiting { animation: cb-home-exit .25s ease forwards; }
+    @keyframes cb-home-exit { to { opacity: 0; transform: translateY(-10px); } }
+    #cb-home-header { height: 60px; background: var(--cb-accent); flex-shrink: 0; }
+    #cb-home-avatar-wrap {
+      position: absolute; top: 24px; left: 50%; transform: translateX(-50%);
+      width: 72px; height: 72px; border-radius: 50%;
+      border: 3px solid #fff; background: var(--cb-accent);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 32px; overflow: hidden; z-index: 2;
+    }
+    #cb-home-avatar-wrap img { width: 100%; height: 100%; object-fit: cover; }
+    #cb-home-body {
+      flex: 1; display: flex; flex-direction: column; align-items: center;
+      padding: 52px 20px 20px; overflow-y: auto; background: #fff;
+    }
+    #cb-home-name { font-size: 18px; font-weight: 600; color: #1a1a1a; text-align: center; margin-bottom: 6px; }
+    #cb-home-subtitle { font-size: 13px; color: #6b7280; text-align: center; line-height: 1.55; }
+    #cb-home-sep { width: 100%; border: none; border-top: 1px solid #f1f5f9; margin: 16px 0; flex-shrink: 0; }
+    #cb-home-chips { display: flex; flex-direction: column; gap: 8px; width: 100%; }
+    .cb-home-chip {
+      border: 1.5px solid var(--cb-accent); color: var(--cb-accent); background: #fff;
+      border-radius: 20px; padding: 9px 16px; font-size: 13px;
+      font-family: var(--cb-font); cursor: pointer; text-align: left;
+      transition: background .15s, color .15s;
+    }
+    .cb-home-chip:hover { background: var(--cb-accent); color: #fff; }
+    #cb-home-start {
+      width: 100%; height: 44px; margin-top: 14px; flex-shrink: 0;
+      background: var(--cb-accent); color: #fff; border: none;
+      border-radius: 24px; font-size: 15px; font-weight: 600;
+      cursor: pointer; font-family: var(--cb-font); transition: opacity .15s;
+    }
+    #cb-home-start:hover { opacity: .88; }
     #cb-messages {
       flex: 1; overflow-y: auto; padding: 16px;
       display: flex; flex-direction: column; gap: 10px;
@@ -169,6 +228,7 @@
       }
       #cb-launcher { right: 16px; bottom: 16px; z-index: 10000; }
       #cb-launcher.open { display: none; }
+      #cb-launcher-badge { bottom: 26px; right: 80px; }
       #cb-messages { justify-content: flex-end; }
       #cb-input { font-size: 16px; }
       #cb-close-btn {
@@ -197,16 +257,31 @@
       .cb-lead-form { background: #2a2a3e; }
       .cb-lead-form input { background: #1e1e2e; border-color: #3a3a5c; color: #e2e8f0; }
       .cb-lead-form label { color: #94a3b8; }
+      #cb-home-body { background: #1e1e2e; }
+      #cb-home-avatar-wrap { border-color: #1e1e2e; }
+      #cb-home-name { color: #e2e8f0; }
+      #cb-home-subtitle { color: #94a3b8; }
+      #cb-home-sep { border-top-color: #2a2a3e; }
+      .cb-home-chip { background: #2a2a3e; }
+      .cb-home-chip:hover { background: var(--cb-accent); color: #fff; }
     }
   `;
 
   function buildHTML(cfg) {
+    const hasAvatar = !!cfg.avatarImg;
+    const launcherImg = hasAvatar ? `<img id="cb-launcher-img" src="${cfg.avatarImg}" alt="">` : '';
+    const homeAvatarContent = hasAvatar ? `<img src="${cfg.avatarImg}" alt="">` : (cfg.avatar || '💬');
+    const launcherText = cfg.launcherText || 'Une question ?';
+    const homeSubtitle = cfg.homeSubtitle || 'Bonjour ! Comment puis-je vous aider ?';
+
     return `
-      <button id="cb-launcher" aria-label="Ouvrir le chat">
+      <button id="cb-launcher" aria-label="Ouvrir le chat"${hasAvatar ? ' class="cb-has-avatar"' : ''}>
         <div id="cb-badge"></div>
+        ${launcherImg}
         <svg class="cb-icon-chat" viewBox="0 0 24 24"><path d="M12 2C6.477 2 2 6.477 2 12c0 1.89.525 3.66 1.438 5.168L2.546 20.5a.5.5 0 0 0 .629.63l3.378-.875A9.96 9.96 0 0 0 12 22c5.523 0 10-4.477 10-10S17.523 2 12 2z"/></svg>
         <svg class="cb-icon-close" viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12" stroke="#fff" stroke-width="2.5" stroke-linecap="round" fill="none"/></svg>
       </button>
+      <div id="cb-launcher-badge">${launcherText}</div>
       <div id="cb-window" role="dialog" aria-label="Chat ${cfg.botName}">
         <div id="cb-header">
           <div id="cb-avatar">${cfg.avatarImg ? `<img src="${cfg.avatarImg}" style="width:100%;height:100%;object-fit:cover;border-radius:50%">` : (cfg.avatar || '💬')}</div>
@@ -219,6 +294,17 @@
             <button class="cb-lang-btn" data-lang="en" title="English">🇬🇧</button>
           </div>
           <button id="cb-close-btn" aria-label="Fermer">✕</button>
+        </div>
+        <div id="cb-home">
+          <div id="cb-home-header"></div>
+          <div id="cb-home-avatar-wrap">${homeAvatarContent}</div>
+          <div id="cb-home-body">
+            <div id="cb-home-name">${cfg.botName}</div>
+            <div id="cb-home-subtitle">${homeSubtitle}</div>
+            <hr id="cb-home-sep">
+            <div id="cb-home-chips"></div>
+            <button id="cb-home-start">Démarrer →</button>
+          </div>
         </div>
         <div id="cb-messages"></div>
         <div id="cb-suggestions"></div>
@@ -259,14 +345,19 @@
     container.innerHTML = buildHTML(cfg);
     document.body.appendChild(container);
 
-    const launcher   = document.getElementById('cb-launcher');
-    const win        = document.getElementById('cb-window');
-    const closeBtn   = document.getElementById('cb-close-btn');
-    const messages   = document.getElementById('cb-messages');
-    const inputEl    = document.getElementById('cb-input');
-    const sendBtn    = document.getElementById('cb-send');
-    const badge      = document.getElementById('cb-badge');
-    const suggestBox = document.getElementById('cb-suggestions');
+    const launcher       = document.getElementById('cb-launcher');
+    const launcherBadge  = document.getElementById('cb-launcher-badge');
+    const win            = document.getElementById('cb-window');
+    const closeBtn       = document.getElementById('cb-close-btn');
+    const messages       = document.getElementById('cb-messages');
+    const suggestBox     = document.getElementById('cb-suggestions');
+    const inputArea      = document.getElementById('cb-input-area');
+    const inputEl        = document.getElementById('cb-input');
+    const sendBtn        = document.getElementById('cb-send');
+    const badge          = document.getElementById('cb-badge');
+    const homeEl         = document.getElementById('cb-home');
+    const homeChipsEl    = document.getElementById('cb-home-chips');
+    const homeStartBtn   = document.getElementById('cb-home-start');
 
     let history = [], isOpen = false, isTyping = false, greeted = false, lead = {}, notifySent = false, formShown = false;
     let sessionStart = Date.now(), logSent = false;
@@ -295,6 +386,7 @@
     function now() {
       return new Date().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
     }
+
     function linkifyPhones(text, frag) {
       const phoneRegex = /(\+33\s?[\d\s]{8,}|0[\d\s]{9,})/g;
       const parts = text.split(phoneRegex);
@@ -344,6 +436,7 @@
       messages.scrollTop = messages.scrollHeight;
       time.scrollIntoView({ block: 'end' });
     }
+
     function showTyping() {
       const d = document.createElement('div');
       d.className = 'cb-typing'; d.id = 'cb-typing';
@@ -373,18 +466,15 @@
       let clean = text;
       let leadData = null;
       let showForm = false;
-
       if (clean.includes('[SHOW_FORM]')) {
         showForm = true;
         clean = clean.replace('[SHOW_FORM]', '').trim();
       }
-
       const match = clean.match(/\[NOTIFY:(\{[\s\S]*?\})\]/);
       if (match) {
         try { leadData = JSON.parse(match[1]); } catch (_) {}
         clean = clean.replace(match[0], '').trim();
       }
-
       return { clean, leadData, showForm };
     }
 
@@ -436,7 +526,6 @@
       }
       if (showForm) formShown = true;
 
-      // Détection implicite d'email/téléphone dans les messages utilisateur
       if (!notifySent && (formShown || lead.score === 'chaud')) {
         const userTexts = history.filter(m => m.role === 'user').map(m => m.content).join(' ');
         const emailMatch = userTexts.match(/[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}/);
@@ -522,21 +611,75 @@
       messages.scrollTop = messages.scrollHeight;
     }
 
+    function hideLauncherBadge() {
+      launcherBadge.classList.remove('visible');
+    }
+
+    function showHome() {
+      homeEl.classList.add('active');
+      messages.style.display = 'none';
+      suggestBox.style.display = 'none';
+      inputArea.style.display = 'none';
+    }
+
+    function transitionToChat(callback) {
+      homeEl.classList.add('cb-exiting');
+      setTimeout(() => {
+        homeEl.classList.remove('active', 'cb-exiting');
+        messages.style.display = '';
+        suggestBox.style.display = '';
+        inputArea.style.display = '';
+        if (callback) callback();
+      }, 250);
+    }
+
     function openChat() {
       isOpen = true; win.classList.add('open'); launcher.classList.add('open');
-      badge.classList.remove('visible'); inputEl.focus();
+      badge.classList.remove('visible');
+      hideLauncherBadge();
       if (window.innerWidth <= 480) document.body.style.overflow = 'hidden';
       if (!greeted) {
-        greeted = true;
-        setTimeout(() => {
-          addMsg(cfg.greeting || `Bonjour ! Je suis ${cfg.botName}. Comment puis-je vous aider ?`, 'bot');
-          if (cfg.suggestions?.length) showSuggestions(cfg.suggestions);
-        }, 300);
+        showHome();
+      } else {
+        inputEl.focus();
       }
     }
-    function closeChat() { isOpen = false; win.classList.remove('open'); launcher.classList.remove('open'); document.body.style.overflow = ''; sendLog(); }
+    function closeChat() {
+      isOpen = false; win.classList.remove('open'); launcher.classList.remove('open');
+      document.body.style.overflow = '';
+      sendLog();
+    }
+
+    // Home screen chips (first 3 suggestions)
+    const homeSuggestions = (cfg.suggestions || []).slice(0, 3);
+    if (homeSuggestions.length) {
+      homeSuggestions.forEach(text => {
+        const btn = document.createElement('button');
+        btn.className = 'cb-home-chip';
+        btn.textContent = text;
+        btn.addEventListener('click', () => {
+          transitionToChat(() => {
+            greeted = true;
+            sendMsg(text);
+          });
+        });
+        homeChipsEl.appendChild(btn);
+      });
+    } else {
+      document.getElementById('cb-home-sep').style.display = 'none';
+    }
+
+    homeStartBtn.addEventListener('click', () => {
+      transitionToChat(() => {
+        greeted = true;
+        addMsg(cfg.greeting || `Bonjour ! Je suis ${cfg.botName}. Comment puis-je vous aider ?`, 'bot');
+        if (cfg.suggestions?.length) showSuggestions(cfg.suggestions);
+        inputEl.focus();
+      });
+    });
 
     launcher.addEventListener('click', () => isOpen ? closeChat() : openChat());
+    launcherBadge.addEventListener('click', () => { hideLauncherBadge(); openChat(); });
     closeBtn.addEventListener('click', closeChat);
     const closeInlineBtn = document.getElementById('cb-close-inline');
     if (closeInlineBtn) closeInlineBtn.addEventListener('click', closeChat);
@@ -587,10 +730,28 @@
       });
     });
 
+    // Launcher text badge: show after 3s, auto-hide on mobile after 5s
+    setTimeout(() => {
+      if (!isOpen) {
+        launcherBadge.classList.add('visible');
+        if (window.innerWidth <= 480) {
+          setTimeout(() => launcherBadge.classList.remove('visible'), 5000);
+        }
+      }
+    }, 3000);
+
     if (cfg.badgeDelay !== false) setTimeout(() => { if (!isOpen) badge.classList.add('visible'); }, cfg.badgeDelay || 4000);
     if (cfg.autoOpen) setTimeout(openChat, cfg.autoOpen);
 
-    return { open: openChat, close: closeChat, reset: () => { history = []; greeted = false; lead = {}; notifySent = false; formShown = false; } };
+    return {
+      open: openChat,
+      close: closeChat,
+      reset: () => {
+        history = []; greeted = false; lead = {}; notifySent = false; formShown = false;
+        homeEl.classList.remove('active', 'cb-exiting');
+        messages.style.display = ''; suggestBox.style.display = ''; inputArea.style.display = '';
+      }
+    };
   }
 
   function buildSystemPrompt(cfg) {

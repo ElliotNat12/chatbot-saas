@@ -58,6 +58,8 @@ Annulation +15 jours: remboursement intégral de l'acompte
 Annulation 7-15 jours: remboursement 50%
 Annulation -7 jours: pas de remboursement`,
 
+  launcherText: 'Réserver votre expérience',
+  homeSubtitle: 'Conduisez un vrai blindé · Normandie',
   poweredBy: 'ChatbotSaaS',
   badgeDelay: 4000,
   errorMessage: 'Je rencontre un problème. Contactez-nous au +33 6 95 05 73 98.',
