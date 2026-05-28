@@ -1,5 +1,6 @@
 const REPO = 'ElliotNat12/chatbot-saas';
 const GITHUB_API = 'https://api.github.com';
+const QUESTIONNAIRES = require('../config/questionnaires');
 
 function esc(s) {
   return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
@@ -27,6 +28,15 @@ function parseConfig(source) {
   return null;
 }
 
+function detectSector(faq) {
+  const t = (faq || '').toLowerCase();
+  if (/restaurant|traiteur|menu|plat/.test(t))         return 'RESTAURANT';
+  if (/coach|coaching|fitness|sport|séance/.test(t))   return 'COACH_SPORT';
+  if (/travaux|artisan|chantier|devis|btp/.test(t))    return 'ARTISAN_BTP';
+  if (/boutique|magasin|produit|stock/.test(t))        return 'COMMERCE';
+  return 'GENERIQUE';
+}
+
 async function ghGet(path) {
   const r = await fetch(`${GITHUB_API}/repos/${REPO}/contents/${path}`, {
     headers: { 'Authorization': `Bearer ${process.env.GITHUB_TOKEN}`, 'Accept': 'application/vnd.github+json' }
@@ -51,54 +61,58 @@ async function ghPut(path, content, sha, message) {
   if (!r.ok) throw new Error(`GitHub push error: ${await r.text()}`);
 }
 
-function formatAnswers(answers) {
+function formatAnswers(answers, questions) {
   if (!answers || typeof answers !== 'object') return '';
   const lines = ['INFORMATIONS COMPLÉMENTAIRES (questionnaire client)'];
-  const simple = [
-    ['price',   'Prix moyen par personne'],
-    ['minimum', 'Minimum personnes groupe/traiteur'],
-    ['delay',   'Délai de commande minimum'],
-    ['parking', 'Parking'],
-    ['animals', 'Animaux acceptés'],
-    ['pmr',     'Accès PMR'],
-    ['kids',    'Menu enfant'],
-  ];
-  for (const [k, label] of simple) {
-    const v = String(answers[k] || '').trim().slice(0, 300);
-    if (v) lines.push(`${label} : ${v}`);
-  }
-  const arrays = [
-    ['payment', 'Modes de paiement'],
-    ['diet',    'Options alimentaires'],
-  ];
-  for (const [k, label] of arrays) {
-    const arr = answers[k];
-    if (Array.isArray(arr) && arr.length) {
-      lines.push(`${label} : ${arr.map(s => String(s).trim()).filter(Boolean).join(', ')}`);
-    }
-  }
-  const long = [
-    ['allergies', 'Gestion des allergies'],
-    ['extra',     'Informations supplémentaires'],
-    ['faq',       'Questions fréquentes des clients'],
-  ];
   const longParts = [];
-  for (const [k, label] of long) {
-    const v = String(answers[k] || '').trim().slice(0, 1000);
-    if (v) longParts.push(`${label} :\n${v}`);
+  for (const q of questions) {
+    const v = answers[q.name];
+    if (v === undefined || v === null || v === '') continue;
+    if (q.type === 'checkbox') {
+      const arr = Array.isArray(v) ? v : [v];
+      const clean = arr.map(s => String(s).trim()).filter(Boolean);
+      if (clean.length) lines.push(`${q.label} : ${clean.join(', ')}`);
+    } else if (q.type === 'textarea') {
+      const s = String(v).trim().slice(0, 1000);
+      if (s) longParts.push(`${q.label} :\n${s}`);
+    } else {
+      const s = String(v).trim().slice(0, 300);
+      if (s) lines.push(`${q.label} : ${s}`);
+    }
   }
   return lines.join('\n') + (longParts.length ? '\n\n' + longParts.join('\n\n') : '');
 }
 
-function renderPage(businessName, accentColor, slug) {
+function renderPage(businessName, accentColor, slug, sectorInfo) {
   const safeName  = esc(businessName);
   const safeColor = /^#[0-9a-fA-F]{6}$/.test(accentColor) ? accentColor : '#2563eb';
   const safeSlug  = slug.replace(/[^a-z0-9-]/gi, '');
   const accentLt  = safeColor + '18';
+  const { label: sectorLabel, timeMinutes, questions } = sectorInfo;
 
-  const opts = (name, items, type) => items.map(o =>
-    `<label class="opt"><input type="${type}" name="${name}" value="${esc(o)}"><span>${esc(o)}</span></label>`
-  ).join('');
+  const renderQ = (q, i) => {
+    let input;
+    if (q.type === 'text') {
+      input = `<input type="text" name="${esc(q.name)}" placeholder="${esc(q.placeholder || '')}">`;
+    } else if (q.type === 'textarea') {
+      input = `<textarea name="${esc(q.name)}" placeholder="${esc(q.placeholder || '')}"></textarea>`;
+    } else {
+      input = `<div class="opts">${(q.options || []).map(o =>
+        `<label class="opt"><input type="${q.type}" name="${esc(q.name)}" value="${esc(o)}"><span>${esc(o)}</span></label>`
+      ).join('')}</div>`;
+    }
+    return `<div class="qb">
+<div class="ql"><span class="qn">${i}</span>${esc(q.label)}</div>
+${input}
+</div>`;
+  };
+
+  const singleFields = JSON.stringify(
+    questions.filter(q => q.type !== 'checkbox').map(q => q.name)
+  );
+  const multiFields = JSON.stringify(
+    questions.filter(q => q.type === 'checkbox').map(q => q.name)
+  );
 
   return `<!DOCTYPE html>
 <html lang="fr">
@@ -112,7 +126,7 @@ function renderPage(businessName, accentColor, slug) {
 body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#f4f6f9;color:#111;line-height:1.6;min-height:100vh;padding-bottom:3rem}
 .hd{background:var(--a);color:#fff;padding:2rem 1.25rem 1.75rem;text-align:center}
 .hd h1{font-size:1.35rem;font-weight:700;margin-bottom:.4rem}
-.hd p{font-size:13.5px;opacity:.85;max-width:460px;margin:0 auto}
+.hd p{font-size:13px;opacity:.85;max-width:460px;margin:0 auto}
 .wrap{max-width:580px;margin:0 auto;padding:1.5rem 1.25rem}
 .intro{font-size:12px;color:#6b7280;font-weight:600;letter-spacing:.06em;text-transform:uppercase;margin-bottom:1.25rem}
 .qb{background:#fff;border-radius:12px;padding:1.25rem 1.375rem;margin-bottom:.875rem;border:1px solid #e5e7eb;box-shadow:0 1px 3px rgba(0,0,0,.04)}
@@ -139,72 +153,14 @@ textarea{resize:vertical;min-height:80px}
 <body>
 <div class="hd">
   <h1>${safeName}</h1>
-  <p>Pour que votre chatbot réponde encore mieux à vos clients, remplissez ce court questionnaire (5 min).</p>
+  <p>Questionnaire ${esc(sectorLabel)} &bull; ${questions.length} questions &bull; ${timeMinutes} minutes</p>
 </div>
 <div class="wrap">
 <div id="fp">
-<p class="intro">12 questions · 5 minutes</p>
+<p class="intro">${questions.length} questions · ${timeMinutes} minutes</p>
 <form id="f">
 
-<div class="qb">
-<div class="ql"><span class="qn">1</span>Prix moyen par personne</div>
-<input type="text" name="price" placeholder="Ex : 25€ par personne">
-</div>
-
-<div class="qb">
-<div class="ql"><span class="qn">2</span>Minimum de personnes pour traiteur / groupe</div>
-<input type="text" name="minimum" placeholder="Ex : 10 personnes minimum">
-</div>
-
-<div class="qb">
-<div class="ql"><span class="qn">3</span>Délai de commande minimum</div>
-<input type="text" name="delay" placeholder="Ex : 48h à l'avance">
-</div>
-
-<div class="qb">
-<div class="ql"><span class="qn">4</span>Modes de paiement acceptés</div>
-<div class="opts">${opts('payment', ['CB','Espèces','Chèque','Virement','PayPal'], 'checkbox')}</div>
-</div>
-
-<div class="qb">
-<div class="ql"><span class="qn">5</span>Y a-t-il un parking ?</div>
-<div class="opts">${opts('parking', ['Oui gratuit','Oui payant','Non','À proximité'], 'radio')}</div>
-</div>
-
-<div class="qb">
-<div class="ql"><span class="qn">6</span>Animaux acceptés ?</div>
-<div class="opts">${opts('animals', ['Oui','Non','Terrasse uniquement'], 'radio')}</div>
-</div>
-
-<div class="qb">
-<div class="ql"><span class="qn">7</span>Accès PMR (personnes à mobilité réduite) ?</div>
-<div class="opts">${opts('pmr', ['Oui','Non','Partiel'], 'radio')}</div>
-</div>
-
-<div class="qb">
-<div class="ql"><span class="qn">8</span>Options végétarienne / vegan disponibles ?</div>
-<div class="opts">${opts('diet', ['Végétarien','Vegan','Sans gluten','Autre'], 'checkbox')}</div>
-</div>
-
-<div class="qb">
-<div class="ql"><span class="qn">9</span>Comment gérez-vous les allergies ?</div>
-<textarea name="allergies" placeholder="Décrivez votre politique allergènes…"></textarea>
-</div>
-
-<div class="qb">
-<div class="ql"><span class="qn">10</span>Menu enfant ? Si oui, quel prix ?</div>
-<input type="text" name="kids" placeholder="Ex : Menu enfant à 12€ (moins de 12 ans)">
-</div>
-
-<div class="qb">
-<div class="ql"><span class="qn">11</span>Infos supplémentaires importantes pour vos clients</div>
-<textarea name="extra" placeholder="Événements spéciaux, promotions, conditions particulières…"></textarea>
-</div>
-
-<div class="qb">
-<div class="ql"><span class="qn">12</span>Questions que vos clients posent souvent</div>
-<textarea name="faq" placeholder="Ex : &quot;Peut-on privatiser la salle ?&quot; — &quot;Acceptez-vous les chèques cadeaux ?&quot;"></textarea>
-</div>
+${questions.map((q, i) => renderQ(q, i + 1)).join('\n')}
 
 <button type="submit" class="sbtn">Envoyer mes réponses →</button>
 </form>
@@ -221,11 +177,13 @@ document.getElementById('f').addEventListener('submit', async function(e) {
   e.preventDefault();
   var fd = new FormData(e.target);
   var answers = {};
-  ['price','minimum','delay','parking','animals','pmr','allergies','kids','extra','faq'].forEach(function(k) {
+  var singleFields = ${singleFields};
+  var multiFields = ${multiFields};
+  singleFields.forEach(function(k) {
     var v = fd.get(k);
     if (v && v.trim()) answers[k] = v.trim();
   });
-  ['payment','diet'].forEach(function(k) {
+  multiFields.forEach(function(k) {
     var v = fd.getAll(k);
     if (v.length) answers[k] = v;
   });
@@ -269,8 +227,10 @@ module.exports = async function handler(req, res) {
       const config = source ? parseConfig(source) : null;
       const businessName = config?.businessName || slug;
       const accentColor  = config?.accentColor  || '#2563eb';
+      const sector       = detectSector(config?.faq || '');
+      const sectorInfo   = QUESTIONNAIRES[sector];
       res.setHeader('Content-Type', 'text/html; charset=utf-8');
-      return res.status(200).send(renderPage(businessName, accentColor, slug));
+      return res.status(200).send(renderPage(businessName, accentColor, slug, sectorInfo));
     } catch (err) {
       return res.status(500).send('<p style="font-family:sans-serif;padding:2rem">Erreur serveur.</p>');
     }
@@ -289,7 +249,9 @@ module.exports = async function handler(req, res) {
       const source = Buffer.from(file.content, 'base64').toString('utf-8');
       const config = parseConfig(source);
       if (!config) return res.status(422).json({ error: 'Could not parse config' });
-      const entry = formatAnswers(answers);
+      const sector     = detectSector(config.faq || '');
+      const sectorInfo = QUESTIONNAIRES[sector];
+      const entry = formatAnswers(answers, sectorInfo.questions);
       if (entry) {
         config.faq = (config.faq || '').trimEnd() + '\n\n' + entry;
         await ghPut(path, `ChatbotSaaS.init(${JSON.stringify(config, null, 2)});\n`, file.sha, `onboarding: ${slug}`);
