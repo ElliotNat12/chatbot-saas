@@ -14,15 +14,18 @@
       --cb-radius: 16px;
       --cb-font: 'DM Sans', system-ui, sans-serif;
     }
+    @keyframes cb-launcher-pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.08); } }
     #cb-launcher {
       position: fixed; bottom: 24px; right: 24px;
-      width: 56px; height: 56px; border-radius: 50%;
+      width: 64px; height: 64px; border-radius: 50%;
       background: var(--cb-accent); border: none; cursor: pointer;
       display: flex; align-items: center; justify-content: center;
-      box-shadow: 0 4px 24px rgba(0,0,0,.18); z-index: 9998;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.25); z-index: 9998;
       transition: transform .2s, box-shadow .2s; overflow: hidden;
+      animation: cb-launcher-pulse 2s ease-in-out infinite;
     }
-    #cb-launcher:hover { transform: scale(1.07); box-shadow: 0 6px 28px rgba(0,0,0,.22); }
+    #cb-launcher.open { animation: none; }
+    #cb-launcher:hover { transform: scale(1.07); box-shadow: 0 6px 28px rgba(0,0,0,.22); animation: none; }
     #cb-launcher svg { width: 26px; height: 26px; fill: #fff; transition: opacity .2s; flex-shrink: 0; }
     #cb-launcher .cb-icon-close { display: none; }
     #cb-launcher.open .cb-icon-chat { display: none; }
@@ -40,9 +43,9 @@
     }
     #cb-badge.visible { display: block; }
     #cb-launcher-badge {
-      position: fixed; bottom: 34px; right: 88px;
+      position: fixed; bottom: 34px; right: 96px;
       background: #fff; color: #1a1a1a; border-radius: 20px;
-      padding: 8px 14px; font-size: 13px; font-family: var(--cb-font);
+      padding: 10px 16px; font-size: 14px; font-family: var(--cb-font);
       box-shadow: 0 2px 12px rgba(0,0,0,.14); white-space: nowrap;
       z-index: 9997; opacity: 0; transition: opacity .3s ease;
       pointer-events: none; cursor: pointer; line-height: 1.4;
@@ -228,7 +231,7 @@
       }
       #cb-launcher { right: 16px; bottom: 16px; z-index: 10000; }
       #cb-launcher.open { display: none; }
-      #cb-launcher-badge { bottom: 26px; right: 80px; }
+      #cb-launcher-badge { bottom: 26px; right: 88px; }
       #cb-messages { justify-content: flex-end; }
       #cb-input { font-size: 16px; }
       #cb-close-btn {
@@ -730,15 +733,9 @@
       });
     });
 
-    // Launcher text badge: show after 3s, auto-hide on mobile after 5s
     setTimeout(() => {
-      if (!isOpen) {
-        launcherBadge.classList.add('visible');
-        if (window.innerWidth <= 480) {
-          setTimeout(() => launcherBadge.classList.remove('visible'), 5000);
-        }
-      }
-    }, 3000);
+      if (!isOpen) launcherBadge.classList.add('visible');
+    }, 1500);
 
     if (cfg.badgeDelay !== false) setTimeout(() => { if (!isOpen) badge.classList.add('visible'); }, cfg.badgeDelay || 4000);
     if (cfg.autoOpen) setTimeout(openChat, cfg.autoOpen);
