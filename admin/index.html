@@ -484,7 +484,10 @@
         <div id="client-info-read">
           <div class="faq-editor-row">
             <div class="bloc-title">Fiche client</div>
-            <button class="btn btn-secondary btn-sm" onclick="enterClientInfoEdit()">Modifier</button>
+            <div style="display:flex;gap:.4rem">
+              <button class="btn btn-secondary btn-sm" onclick="openQModal()">📋 Questionnaire onboarding</button>
+              <button class="btn btn-secondary btn-sm" onclick="enterClientInfoEdit()">Modifier</button>
+            </div>
           </div>
           <div id="client-info-display" style="font-size:13px;color:var(--muted);line-height:1.8;margin-bottom:.75rem"></div>
         </div>
@@ -558,6 +561,7 @@
         <div class="bloc-title">Suggestions d'amélioration <span class="badge-count" id="sug-pending-badge">0</span></div>
         <div style="display:flex;gap:.5rem">
           <button class="btn btn-secondary btn-sm" onclick="generateSuggestionsForClient()">Générer maintenant</button>
+          <button class="btn btn-secondary btn-sm" onclick="openWeeklyQModal()">📤 Envoyer au client</button>
           <button class="btn btn-primary btn-sm" onclick="approveAllSuggestions()">Tout approuver</button>
         </div>
       </div>
@@ -1572,6 +1576,15 @@ function openQModal() {
   document.getElementById('q-link').value = link;
   document.getElementById('q-msg').value =
     'Bonjour !\n\nPour que votre chatbot réponde encore mieux à vos clients, pourriez-vous remplir ce petit formulaire (5 min) ?\n\n' +
+    link + '\n\nMerci d\'avance !';
+  document.getElementById('questionnaire-modal').classList.add('visible');
+}
+function openWeeklyQModal() {
+  if (!S.testerSlug) return;
+  const link = window.location.origin + '/api/weekly-questionnaire?slug=' + S.testerSlug;
+  document.getElementById('q-link').value = link;
+  document.getElementById('q-msg').value =
+    'Bonjour !\n\nVos clients ont posé des questions cette semaine. Pourriez-vous prendre 5 minutes pour y répondre ?\n\n' +
     link + '\n\nMerci d\'avance !';
   document.getElementById('questionnaire-modal').classList.add('visible');
 }
