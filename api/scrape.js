@@ -1,6 +1,7 @@
-const GLOBAL_TIMEOUT_MS = 90_000;
-const POLL_INTERVAL_MS = 2_000;
+const GLOBAL_TIMEOUT_MS = 120_000;
+const POLL_INTERVAL_MS = 1_500;
 const CLAUDE_BUFFER_MS = 10_000; // reserve this much time for Claude at the end
+const INDIVIDUAL_SCRAPE_TIMEOUT_MS = 15_000;
 const PRIORITY_KEYWORDS = ['contact', 'faq', 'livraison', 'tarifs', 'about', 'a-propos', 'conditions', 'cgv', 'mentions'];
 
 async function scrapeIndividual(pageUrl, apiKey) {
@@ -65,7 +66,7 @@ module.exports = async function handler(req, res) {
       },
       body: JSON.stringify({
         url,
-        limit: 5,
+        limit: 3,
         scrapeOptions: { formats: ['markdown'] }
       })
     });
@@ -130,12 +131,14 @@ module.exports = async function handler(req, res) {
       ...validExtraUrls.filter(u => !crawledUrls.has(u))
     ])];
 
-    const extraMarkdowns = [];
-    for (const pageUrl of toScrape) {
-      if (Date.now() + CLAUDE_BUFFER_MS >= deadline) break;
-      const content = await scrapeIndividual(pageUrl, process.env.FIRECRAWL_API_KEY);
-      if (content) extraMarkdowns.push(content);
-    }
+    const scrapeWithTimeout = (pageUrl) => Promise.race([
+      scrapeIndividual(pageUrl, process.env.FIRECRAWL_API_KEY),
+      new Promise(r => setTimeout(() => r(''), INDIVIDUAL_SCRAPE_TIMEOUT_MS))
+    ]);
+
+    const extraMarkdowns = Date.now() + CLAUDE_BUFFER_MS < deadline
+      ? (await Promise.all(toScrape.map(scrapeWithTimeout))).filter(Boolean)
+      : [];
 
     const markdown = [mainMarkdown, ...extraMarkdowns].join('\n\n---\n\n');
 
