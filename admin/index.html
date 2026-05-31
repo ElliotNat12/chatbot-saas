@@ -331,8 +331,19 @@
     <div class="err-msg" id="analyze-err"></div>
 
     <div class="section-title">Identité</div>
-    <div class="row">
+    <div class="row triple">
       <div class="field"><label>Nom de l'entreprise</label><input type="text" id="businessName" placeholder="Le Tankiste SCA" oninput="autoSlug()" /></div>
+      <div class="field">
+        <label>Secteur d'activité</label>
+        <select id="sector" onchange="onSectorChange(this.value)">
+          <option value="">Auto (détection automatique)</option>
+          <option value="RESTAURANT">Restaurant / Traiteur</option>
+          <option value="COMMERCE">Boutique / E-commerce</option>
+          <option value="COACH">Coach sportif</option>
+          <option value="ARTISAN">Artisan / BTP</option>
+          <option value="GENERIQUE">Autre</option>
+        </select>
+      </div>
       <div class="field"><label>Slug URL (auto)</label><input type="text" id="clientSlug" placeholder="tankiste-sca" /></div>
     </div>
     <div class="row triple" style="margin-top:.75rem">
@@ -352,6 +363,19 @@
       <div class="field"><label>Horaires téléphone</label><input type="text" id="phoneHours" placeholder="lun–ven, 9h–18h" /></div>
     </div>
     <div class="field" style="margin-top:.75rem"><label>URL de réservation</label><input type="url" id="bookingUrl" placeholder="https://exemple.fr/reservation" /></div>
+
+    <div class="section-title">Suggestions (boutons rapides)</div>
+    <div class="row" style="margin-bottom:.5rem">
+      <div class="field"><input type="text" id="sug-0" placeholder="Suggestion 1" /></div>
+      <div class="field"><input type="text" id="sug-1" placeholder="Suggestion 2" /></div>
+    </div>
+    <div class="row" style="margin-bottom:.5rem">
+      <div class="field"><input type="text" id="sug-2" placeholder="Suggestion 3" /></div>
+      <div class="field"><input type="text" id="sug-3" placeholder="Suggestion 4" /></div>
+    </div>
+    <div class="field" style="margin-bottom:.75rem">
+      <input type="text" id="sug-4" placeholder="Suggestion 5 (optionnelle)" />
+    </div>
 
     <div class="section-title">Base de connaissances (FAQ)</div>
     <textarea id="faq" rows="12" placeholder="Cliquez sur 'Analyser le site' pour remplir automatiquement…"></textarea>
@@ -532,6 +556,14 @@ const S = {
 };
 
 const OFFER_MRR = { Starter: 49, Leads: 149, Premium: 299 };
+
+const SUGGESTIONS_TEMPLATES = {
+  RESTAURANT: ["C'est combien ?", "Réserver une table", "Vous êtes ouverts quand ?", "Le menu ?", "Nous appeler"],
+  COMMERCE: ["Quels sont vos produits ?", "Livraison et délais ?", "Tailles disponibles ?", "Comment commander ?", "Nous contacter"],
+  COACH: ["Séance découverte ?", "Quels sont vos tarifs ?", "Comment réserver ?", "Votre programme ?", "Nous contacter"],
+  ARTISAN: ["Demander un devis", "Zone d'intervention ?", "Délai d'intervention ?", "Vos certifications ?", "Nous appeler"],
+  GENERIQUE: ["En savoir plus", "Nos services", "Nos tarifs", "Horaires", "Nous contacter"],
+};
 const NEXT_STATUS = { prospect: 'demo', demo: 'client' };
 const STATUS_LABELS = { prospect: 'Prospect', demo: 'Démo envoyée', client: 'Client actif' };
 const STEPS = [
@@ -724,6 +756,15 @@ function cycleStatus(slug, svc) {
 // ════════════════════════════════
 // TAB 2 — NOUVEAU CLIENT
 // ════════════════════════════════
+function onSectorChange(sector) {
+  if (!sector) return;
+  const tpl = SUGGESTIONS_TEMPLATES[sector] || SUGGESTIONS_TEMPLATES.GENERIQUE;
+  tpl.forEach((s, i) => {
+    const el = document.getElementById('sug-' + i);
+    if (el) el.value = s;
+  });
+}
+
 function autoSlug() {
   const name = document.getElementById('businessName').value;
   document.getElementById('clientSlug').value = name.toLowerCase()
@@ -774,6 +815,8 @@ async function analyzeSite() {
   btn.disabled = true;
   btn.innerHTML = '<span class="spinner"></span>Analyse…';
   ['businessName','clientSlug','botName','avatar','phone','phoneHours','bookingUrl','faq'].forEach(id => document.getElementById(id).value = '');
+  [0,1,2,3,4].forEach(i => { const el = document.getElementById('sug-' + i); if (el) el.value = ''; });
+  document.getElementById('sector').value = '';
   document.getElementById('accentColor').value = '#2563eb';
   document.getElementById('accentColorPicker').value = '#2563eb';
   document.getElementById('success-card').classList.remove('visible');
@@ -795,6 +838,7 @@ async function analyzeSite() {
 async function deploySite() {
   hideErr('deploy-err');
   document.getElementById('success-card').classList.remove('visible');
+  const suggestions = [0,1,2,3,4].map(i => (document.getElementById('sug-' + i)?.value || '').trim()).filter(Boolean);
   const payload = {
     clientSlug: document.getElementById('clientSlug').value.trim(),
     businessName: document.getElementById('businessName').value.trim(),
@@ -805,6 +849,7 @@ async function deploySite() {
     phoneHours: document.getElementById('phoneHours').value.trim(),
     bookingUrl: document.getElementById('bookingUrl').value.trim(),
     faq: document.getElementById('faq').value.trim(),
+    suggestions: suggestions.length ? suggestions : undefined,
   };
   if (!payload.clientSlug) return showErr('deploy-err', 'Le slug est obligatoire.');
   if (!payload.businessName) return showErr('deploy-err', 'Le nom de l\'entreprise est obligatoire.');
