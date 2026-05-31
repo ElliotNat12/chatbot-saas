@@ -219,6 +219,7 @@ module.exports = async function handler(req, res) {
   if (req.method === 'OPTIONS') return res.status(200).end();
 
   if (req.method === 'GET') {
+    console.log('[onboarding] QUESTIONNAIRES keys=', Object.keys(QUESTIONNAIRES));
     const { slug } = req.query;
     if (!slug) return res.status(400).send('<p style="font-family:sans-serif;padding:2rem">Paramètre slug manquant.</p>');
     if (!/^[a-z0-9-]+$/i.test(slug)) return res.status(400).send('<p style="font-family:sans-serif;padding:2rem">Slug invalide.</p>');
