@@ -33,6 +33,7 @@ function detectSector(faq) {
   if (/restaurant|traiteur|menu|plat/.test(t))         return 'RESTAURANT';
   if (/coach|coaching|fitness|sport|séance/.test(t))   return 'COACH_SPORT';
   if (/travaux|artisan|chantier|devis|btp/.test(t))    return 'ARTISAN_BTP';
+  if (/allaitement|vêtement|vetement|taille|mode|collection/.test(t)) return 'COMMERCE';
   if (/boutique|magasin|produit|stock/.test(t))        return 'COMMERCE';
   return 'GENERIQUE';
 }
