@@ -98,14 +98,50 @@ function formatAnswers(answers, questions) {
   return lines.join('\n') + (longParts.length ? '\n\n' + longParts.join('\n\n') : '');
 }
 
-function renderOnboardingPage(businessName, accentColor, slug, sectorInfo) {
+const COVERAGE_PATTERNS = {
+  sizes_guide:            /taille|guide des tailles|S,\s*M,\s*L|XL|mesure/i,
+  materials:              /mati[eè]re|coton|lin|tencel|soie|composition|fibre/i,
+  made_in:                /fabricat|fabriqu[eé]|made in|france|oeko|label|bio/i,
+  stock:                  /pr[eé]commande|en stock|stock|disponib/i,
+  delivery_delay:         /d[eé]lai.{0,25}livraison|livraison.{0,25}(jour|semaine)|exp[eé]dition/i,
+  delivery_price:         /frais de (livraison|port)|port offert|livraison (gratuite|inclus|offerte)/i,
+  delivery_international: /international|[eé]tranger|europe|monde|pays/i,
+  tracking:               /suivi|tracking|num[eé]ro de (suivi|colis)/i,
+  return_delay:           /r[eé]tractation|retour.{0,30}(jour|jours)/i,
+  return_conditions:      /retour.{0,60}(neuf|emballage|condition|non port[eé]|non lav[eé])/i,
+  exchange:               /[eé]change/i,
+  payment_methods:        /(mode|moyen).{0,20}paiement|carte bancaire|paypal|virement|apple pay|google pay/i,
+  payment_security:       /s[eé]curi.{0,20}paiement|ssl|stripe|payplug|3d secure/i,
+  promo:                  /promo|code promo|r[eé]duction|fid[eé]lit[eé]|newsletter.{0,20}code/i,
+  sav_contact:            /contact|email|mail|t[eé]l[eé]phone/i,
+  faq_frequent:           /\?/,
+};
+
+function detectCoveredQuestions(faq, questions) {
+  const covered = new Set();
+  const text = faq || '';
+  for (const q of questions) {
+    const pattern = COVERAGE_PATTERNS[q.name];
+    if (pattern && pattern.test(text)) covered.add(q.name);
+  }
+  return covered;
+}
+
+function renderOnboardingPage(businessName, accentColor, slug, sectorInfo, existingFaq) {
   const safeName  = esc(businessName);
   const safeColor = /^#[0-9a-fA-F]{6}$/.test(accentColor) ? accentColor : '#2563eb';
   const safeSlug  = slug.replace(/[^a-z0-9-]/gi, '');
   const accentLt  = safeColor + '18';
   const { label: sectorLabel, timeMinutes, questions } = sectorInfo;
+  const covered   = detectCoveredQuestions(existingFaq, questions);
+  const activeQuestions = questions.filter(q => !covered.has(q.name));
 
-  const renderQ = (q, i) => {
+  const renderQ = (q, i, isCovered) => {
+    if (isCovered) {
+      return `<div class="qb qb-covered">
+<div class="ql"><span class="qn qn-ok">✓</span>${esc(q.label)}<span class="covered-badge">Déjà renseigné</span></div>
+</div>`;
+    }
     let input;
     if (q.type === 'text') {
       input = `<input type="text" name="${esc(q.name)}" placeholder="${esc(q.placeholder || '')}">`;
@@ -122,8 +158,8 @@ ${input}
 </div>`;
   };
 
-  const singleFields = JSON.stringify(questions.filter(q => q.type !== 'checkbox').map(q => q.name));
-  const multiFields  = JSON.stringify(questions.filter(q => q.type === 'checkbox').map(q => q.name));
+  const singleFields = JSON.stringify(activeQuestions.filter(q => q.type !== 'checkbox').map(q => q.name));
+  const multiFields  = JSON.stringify(activeQuestions.filter(q => q.type === 'checkbox').map(q => q.name));
 
   return `<!DOCTYPE html>
 <html lang="fr">
@@ -141,8 +177,12 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
 .wrap{max-width:580px;margin:0 auto;padding:1.5rem 1.25rem}
 .intro{font-size:12px;color:#6b7280;font-weight:600;letter-spacing:.06em;text-transform:uppercase;margin-bottom:1.25rem}
 .qb{background:#fff;border-radius:12px;padding:1.25rem 1.375rem;margin-bottom:.875rem;border:1px solid #e5e7eb;box-shadow:0 1px 3px rgba(0,0,0,.04)}
-.ql{font-size:14px;font-weight:600;color:#111;margin-bottom:.75rem;display:flex;align-items:baseline;gap:.5rem}
+.qb-covered{background:#f9fafb;border-color:#d1fae5;box-shadow:none;opacity:.75}
+.qb-covered .ql{margin-bottom:0;color:#6b7280}
+.covered-badge{font-size:11px;font-weight:500;color:#059669;background:#d1fae5;border-radius:999px;padding:1px 8px;margin-left:auto;white-space:nowrap;flex-shrink:0}
+.ql{font-size:14px;font-weight:600;color:#111;margin-bottom:.75rem;display:flex;align-items:center;gap:.5rem}
 .qn{display:inline-flex;align-items:center;justify-content:center;background:var(--a);color:#fff;font-size:11px;font-weight:700;border-radius:999px;min-width:20px;padding:0 6px;height:20px;flex-shrink:0;line-height:1}
+.qn-ok{background:#059669}
 input[type=text],textarea{width:100%;border:1px solid #dde2e8;border-radius:8px;padding:9px 12px;font-size:14px;font-family:inherit;color:#111;outline:none;background:#f9fafb;transition:border-color .15s}
 input[type=text]:focus,textarea:focus{border-color:var(--a);background:#fff}
 textarea{resize:vertical;min-height:80px}
@@ -164,14 +204,14 @@ textarea{resize:vertical;min-height:80px}
 <body>
 <div class="hd">
   <h1>${safeName}</h1>
-  <p>Questionnaire ${esc(sectorLabel)} &bull; ${questions.length} questions &bull; ${timeMinutes} minutes</p>
+  <p>Questionnaire ${esc(sectorLabel)} &bull; ${activeQuestions.length} question${activeQuestions.length > 1 ? 's' : ''} à remplir${covered.size ? ` · ${covered.size} déjà renseignée${covered.size > 1 ? 's' : ''}` : ''}</p>
 </div>
 <div class="wrap">
 <div id="fp">
-<p class="intro">${questions.length} questions · ${timeMinutes} minutes</p>
+<p class="intro">${activeQuestions.length} question${activeQuestions.length > 1 ? 's' : ''} restante${activeQuestions.length > 1 ? 's' : ''} · ~${Math.ceil(activeQuestions.length / questions.length * timeMinutes)} minutes</p>
 <form id="f">
 
-${questions.map((q, i) => renderQ(q, i + 1)).join('\n')}
+${questions.map((q, i) => renderQ(q, i + 1, covered.has(q.name))).join('\n')}
 
 <button type="submit" class="sbtn">Envoyer mes réponses →</button>
 </form>
@@ -406,7 +446,7 @@ module.exports = async function handler(req, res) {
       const sectorInfo   = QUESTIONNAIRES[sector];
       console.log('[onboarding] sector=', sector, 'questions=', sectorInfo.questions.length);
       res.setHeader('Content-Type', 'text/html; charset=utf-8');
-      return res.status(200).send(renderOnboardingPage(businessName, accentColor, slug, sectorInfo));
+      return res.status(200).send(renderOnboardingPage(businessName, accentColor, slug, sectorInfo, config?.faq || ''));
     } catch (err) {
       return res.status(500).send('<p style="font-family:sans-serif;padding:2rem">Erreur serveur.</p>');
     }
