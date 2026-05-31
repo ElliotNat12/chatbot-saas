@@ -1,6 +1,17 @@
 const REPO = 'ElliotNat12/chatbot-saas';
 const GITHUB_API = 'https://api.github.com';
 const VERCEL_URL = process.env.VERCEL_URL || 'https://chatbot-saas-nine.vercel.app';
+const crypto = require('crypto');
+
+function svcH() {
+  const key = process.env.SUPABASE_SERVICE_KEY || process.env.SUPABASE_ANON_KEY;
+  return {
+    'apikey': key,
+    'Authorization': `Bearer ${key}`,
+    'Content-Type': 'application/json',
+    'Prefer': 'return=representation'
+  };
+}
 
 function generateConfigJs(data) {
   const config = {
@@ -162,7 +173,33 @@ module.exports = async function handler(req, res) {
   }
 
   const data = req.body;
-  const { clientSlug } = data;
+  const { clientSlug, action } = data;
+
+  // ── Action: send client invite link ────────────────────────────────────────
+  if (action === 'invite') {
+    const { slug, email } = data;
+    if (!slug) return res.status(400).json({ error: 'Missing slug' });
+    if (!/^[a-z0-9-]+$/i.test(slug)) return res.status(400).json({ error: 'Invalid slug' });
+    try {
+      const setup_token = crypto.randomUUID();
+      const expires = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
+      const upsertRes = await fetch(`${process.env.SUPABASE_URL}/rest/v1/client_auth`, {
+        method: 'POST',
+        headers: { ...svcH(), 'Prefer': 'resolution=merge-duplicates,return=minimal' },
+        body: JSON.stringify({ slug, email: email || null, setup_token, setup_token_expires_at: expires })
+      });
+      if (!upsertRes.ok) {
+        const err = await upsertRes.text();
+        return res.status(502).json({ error: 'Supabase upsert error', detail: err });
+      }
+      const inviteUrl = `${VERCEL_URL}/api/client-auth?slug=${encodeURIComponent(slug)}&token=${setup_token}`;
+      return res.status(200).json({ ok: true, inviteUrl, expiresAt: expires });
+    } catch (err) {
+      return res.status(500).json({ error: err.message });
+    }
+  }
+
+  // ── Default: deploy client site ─────────────────────────────────────────────
   if (!clientSlug) return res.status(400).json({ error: 'Missing clientSlug' });
 
   const token = process.env.GITHUB_TOKEN;

@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Espace client — ChatbotSaaS</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{--accent:#2563eb;--accent-lt:#eff6ff;--surface:#fff;--bg:#f4f6f9;--border:#e5e7eb;--muted:#6b7280;--text:#111;--green:#059669;--green-lt:#d1fae5;--radius:12px}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:var(--bg);color:var(--text);line-height:1.6;min-height:100vh}
+
+/* ─── Login ─── */
+#page-login{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:1.5rem}
+.login-card{background:var(--surface);border-radius:16px;padding:2.5rem 2rem;width:100%;max-width:400px;box-shadow:0 4px 24px rgba(0,0,0,.08)}
+.logo{font-size:17px;font-weight:700;color:var(--accent);margin-bottom:2rem;text-align:center;letter-spacing:-.01em}
+.login-card h1{font-size:1.25rem;font-weight:700;text-align:center;margin-bottom:.35rem}
+.login-sub{font-size:13px;color:var(--muted);text-align:center;margin-bottom:1.75rem}
+.field-label{display:block;font-size:13px;font-weight:600;color:#374151;margin-bottom:.4rem;margin-top:1rem}
+.field-input{width:100%;border:1px solid #dde2e8;border-radius:8px;padding:10px 12px;font-size:15px;font-family:inherit;outline:none;transition:border-color .15s;background:#f9fafb}
+.field-input:focus{border-color:var(--accent);background:#fff}
+.btn-primary{width:100%;padding:12px;background:var(--accent);color:#fff;border:none;border-radius:8px;font-size:15px;font-weight:600;cursor:pointer;font-family:inherit;margin-top:1.5rem;transition:opacity .15s}
+.btn-primary:hover:not(:disabled){opacity:.88}
+.btn-primary:disabled{opacity:.5;cursor:not-allowed}
+.err-box{font-size:13px;color:#dc2626;background:#fef2f2;border:1px solid #fecaca;border-radius:6px;padding:.6rem .9rem;margin-top:1rem;display:none}
+
+/* ─── Dashboard ─── */
+#page-dash{display:none}
+.dash-header{background:var(--accent);color:#fff;padding:0 1.5rem;height:60px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:10}
+.dash-logo{font-size:15px;font-weight:700;letter-spacing:-.01em}
+.dash-title{font-size:14px;opacity:.85;text-align:center}
+.btn-logout{background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.3);color:#fff;border-radius:6px;padding:5px 12px;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;transition:background .15s}
+.btn-logout:hover{background:rgba(255,255,255,.25)}
+.dash-main{max-width:700px;margin:0 auto;padding:1.5rem 1.25rem 3rem}
+
+/* ─── Cards ─── */
+.section-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:1.5rem;margin-bottom:1.25rem}
+.section-title{font-size:14px;font-weight:700;text-align:uppercase;letter-spacing:.06em;color:var(--muted);margin-bottom:1.1rem}
+
+/* ─── Stats ─── */
+.stats-row{display:grid;grid-template-columns:1fr 1fr;gap:.875rem}
+.stat-box{background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:1rem 1.1rem;text-align:center}
+.stat-val{font-size:2rem;font-weight:700;color:var(--text);line-height:1}
+.stat-lbl{font-size:12px;color:var(--muted);margin-top:.3rem}
+
+/* ─── Form fields ─── */
+.form-group{margin-bottom:.9rem}
+.form-group label{display:block;font-size:13px;font-weight:600;color:#374151;margin-bottom:.4rem}
+.form-group input,.form-group textarea{width:100%;border:1px solid #dde2e8;border-radius:8px;padding:9px 12px;font-size:14px;font-family:inherit;outline:none;transition:border-color .15s;background:#f9fafb}
+.form-group input:focus,.form-group textarea:focus{border-color:var(--accent);background:#fff}
+.form-group textarea{resize:vertical;min-height:160px}
+.form-hint{font-size:12px;color:var(--muted);margin-bottom:.9rem;line-height:1.55}
+.save-row{display:flex;align-items:center;gap:.75rem;margin-top:1rem}
+.btn-save{padding:9px 20px;background:var(--accent);color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit;transition:opacity .15s}
+.btn-save:hover:not(:disabled){opacity:.88}
+.btn-save:disabled{opacity:.5;cursor:not-allowed}
+.save-ok{font-size:13px;color:var(--green);font-weight:600;display:none}
+.save-err{font-size:13px;color:#dc2626;display:none}
+
+/* ─── Iframe section ─── */
+.iframe-wrap{border:1px solid var(--border);border-radius:10px;overflow:hidden;margin-top:.75rem}
+.iframe-wrap iframe{display:block;width:100%;height:480px;border:none}
+.btn-secondary{padding:7px 14px;background:transparent;border:1px solid var(--border);border-radius:7px;font-size:13px;font-weight:500;cursor:pointer;font-family:inherit;color:var(--text);margin-top:.75rem;transition:border-color .15s}
+.btn-secondary:hover{border-color:#9ca3af}
+
+/* ─── Spinner ─── */
+.spinner{display:inline-block;width:14px;height:14px;border:2px solid rgba(255,255,255,.4);border-top-color:#fff;border-radius:50%;animation:spin .6s linear infinite;vertical-align:middle;margin-right:4px}
+@keyframes spin{to{transform:rotate(360deg)}}
+.spinner-dark{border-color:rgba(37,99,235,.2);border-top-color:var(--accent)}
+</style>
+</head>
+<body>
+
+<!-- ─── Page login ─── -->
+<div id="page-login">
+  <div class="login-card">
+    <div class="logo">ChatbotSaaS</div>
+    <h1>Espace client</h1>
+    <p class="login-sub" id="login-slug-label">Connexion à votre tableau de bord</p>
+    <form id="login-form">
+      <label class="field-label">Mot de passe</label>
+      <input class="field-input" type="password" id="login-pw" placeholder="Votre mot de passe" required autocomplete="current-password">
+      <button class="btn-primary" type="submit" id="login-btn">Se connecter</button>
+      <div class="err-box" id="login-err"></div>
+    </form>
+  </div>
+</div>
+
+<!-- ─── Page dashboard ─── -->
+<div id="page-dash">
+  <header class="dash-header">
+    <div class="dash-logo">ChatbotSaaS</div>
+    <div class="dash-title" id="dash-biz-name"></div>
+    <button class="btn-logout" onclick="logout()">Déconnexion</button>
+  </header>
+
+  <main class="dash-main">
+
+    <!-- SECTION 1 — Stats -->
+    <div class="section-card">
+      <div class="section-title">📊 Cette semaine</div>
+      <div class="stats-row">
+        <div class="stat-box">
+          <div class="stat-val" id="stat-conv">—</div>
+          <div class="stat-lbl">Conversations</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-val" id="stat-leads">—</div>
+          <div class="stat-lbl">Leads qualifiés</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SECTION 2 — Contact -->
+    <div class="section-card">
+      <div class="section-title">📞 Informations de contact</div>
+      <div class="form-group">
+        <label>Téléphone</label>
+        <input type="tel" id="f-phone" placeholder="Ex: +33 6 12 34 56 78">
+      </div>
+      <div class="form-group">
+        <label>Horaires téléphone</label>
+        <input type="text" id="f-phoneHours" placeholder="Ex: Lundi–Vendredi 9h–18h">
+      </div>
+      <div class="form-group">
+        <label>URL de réservation / contact</label>
+        <input type="url" id="f-bookingUrl" placeholder="https://...">
+      </div>
+      <div class="save-row">
+        <button class="btn-save" id="save-contact-btn" onclick="saveContact()">Sauvegarder</button>
+        <span class="save-ok" id="contact-ok">✅ Sauvegardé !</span>
+        <span class="save-err" id="contact-err"></span>
+      </div>
+    </div>
+
+    <!-- SECTION 3 — FAQ -->
+    <div class="section-card">
+      <div class="section-title">📚 Base de connaissances</div>
+      <p class="form-hint">Ajoutez vos informations sous forme de questions/réponses. Votre chatbot s'en servira pour répondre à vos clients.<br>
+        <strong>Exemple :</strong> Q: Êtes-vous ouverts le dimanche ? R: Oui, de 10h à 18h.</p>
+      <div class="form-group">
+        <textarea id="f-faq" placeholder="Ajoutez vos infos ici..."></textarea>
+      </div>
+      <div class="save-row">
+        <button class="btn-save" id="save-faq-btn" onclick="saveFaq()">Sauvegarder la FAQ</button>
+        <span class="save-ok" id="faq-ok">✅ Sauvegardé ! Votre chatbot sera mis à jour dans 1–2 minutes.</span>
+        <span class="save-err" id="faq-err"></span>
+      </div>
+    </div>
+
+    <!-- SECTION 4 — Test chatbot -->
+    <div class="section-card">
+      <div class="section-title">🤖 Tester votre chatbot</div>
+      <div class="iframe-wrap">
+        <iframe id="chatbot-iframe" title="Chatbot preview" loading="lazy"></iframe>
+      </div>
+      <button class="btn-secondary" onclick="refreshIframe()">↻ Rafraîchir</button>
+    </div>
+
+  </main>
+</div>
+
+<script>
+// ─── Init ────────────────────────────────────────────────────────────────────
+var slug = (window.location.pathname.split('/').filter(Boolean)[1] || '').replace(/[^a-z0-9-]/gi, '');
+var TOKEN_KEY = 'client-token-' + slug;
+var _token = null;
+var _clientData = null;
+
+document.getElementById('login-slug-label').textContent = slug ? 'Espace client : ' + slug : 'Connexion à votre tableau de bord';
+
+async function init() {
+  var stored = localStorage.getItem(TOKEN_KEY);
+  if (!stored) { showLogin(); return; }
+  try {
+    var data = await apiGet();
+    _token = stored;
+    showDash(data);
+  } catch(e) {
+    localStorage.removeItem(TOKEN_KEY);
+    showLogin();
+  }
+}
+
+// ─── Auth ─────────────────────────────────────────────────────────────────────
+function showLogin() {
+  document.getElementById('page-login').style.display = 'flex';
+  document.getElementById('page-dash').style.display = 'none';
+}
+
+function showDash(data) {
+  _clientData = data;
+  document.getElementById('page-login').style.display = 'none';
+  document.getElementById('page-dash').style.display = 'block';
+  document.title = (data.businessName || slug) + ' — Espace client';
+  document.getElementById('dash-biz-name').textContent = data.businessName || slug;
+  // Pre-fill contact fields
+  document.getElementById('f-phone').value = data.phone || '';
+  document.getElementById('f-phoneHours').value = data.phoneHours || '';
+  document.getElementById('f-bookingUrl').value = data.bookingUrl || '';
+  document.getElementById('f-faq').value = data.faq || '';
+  // Chatbot iframe
+  document.getElementById('chatbot-iframe').src = '/demo-' + slug + '/';
+  // Load stats
+  loadStats(data.businessName || slug);
+}
+
+function logout() {
+  localStorage.removeItem(TOKEN_KEY);
+  _token = null;
+  showLogin();
+}
+
+document.getElementById('login-form').addEventListener('submit', async function(e) {
+  e.preventDefault();
+  var pw = document.getElementById('login-pw').value;
+  var err = document.getElementById('login-err');
+  var btn = document.getElementById('login-btn');
+  err.style.display = 'none';
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span>Connexion…';
+  try {
+    var r = await fetch('/api/client-auth', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'login', slug: slug, password: pw })
+    });
+    var data = await r.json();
+    if (!r.ok) throw new Error(data.error || 'Erreur de connexion');
+    _token = data.token;
+    localStorage.setItem(TOKEN_KEY, _token);
+    var clientData = await apiGet();
+    showDash(clientData);
+  } catch(e) {
+    err.textContent = e.message;
+    err.style.display = 'block';
+    btn.disabled = false;
+    btn.textContent = 'Se connecter';
+  }
+});
+
+// ─── API helpers ──────────────────────────────────────────────────────────────
+function getToken() {
+  return _token || localStorage.getItem(TOKEN_KEY) || '';
+}
+
+async function apiGet() {
+  var r = await fetch('/api/client-data?data=faq&slug=' + slug, {
+    headers: { 'Authorization': 'Bearer ' + getToken() }
+  });
+  if (!r.ok) {
+    var e = await r.json().catch(() => ({ error: 'Erreur' }));
+    throw new Error(e.error || 'Erreur API');
+  }
+  return r.json();
+}
+
+async function apiSave(body) {
+  var r = await fetch('/api/client-data', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + getToken() },
+    body: JSON.stringify(body)
+  });
+  if (!r.ok) {
+    var e = await r.json().catch(() => ({ error: 'Erreur' }));
+    throw new Error(e.error || 'Erreur sauvegarde');
+  }
+  return r.json();
+}
+
+// ─── Stats ────────────────────────────────────────────────────────────────────
+async function loadStats(businessName) {
+  try {
+    var r = await fetch('/api/client-data?data=stats&businessName=' + encodeURIComponent(businessName));
+    if (!r.ok) return;
+    var s = await r.json();
+    document.getElementById('stat-conv').textContent = s.conversations ?? '—';
+    document.getElementById('stat-leads').textContent = s.leads ?? '—';
+  } catch(e) { /* keep —— */ }
+}
+
+// ─── Save contact ─────────────────────────────────────────────────────────────
+async function saveContact() {
+  var btn = document.getElementById('save-contact-btn');
+  var ok  = document.getElementById('contact-ok');
+  var err = document.getElementById('contact-err');
+  ok.style.display = 'none'; err.style.display = 'none';
+  btn.disabled = true; btn.innerHTML = '<span class="spinner spinner-dark"></span>Sauvegarde…';
+  try {
+    await apiSave({
+      phone: document.getElementById('f-phone').value.trim(),
+      phoneHours: document.getElementById('f-phoneHours').value.trim(),
+      bookingUrl: document.getElementById('f-bookingUrl').value.trim()
+    });
+    ok.style.display = 'inline';
+    setTimeout(() => { ok.style.display = 'none'; }, 3000);
+  } catch(e) {
+    err.textContent = e.message; err.style.display = 'inline';
+  } finally {
+    btn.disabled = false; btn.textContent = 'Sauvegarder';
+  }
+}
+
+// ─── Save FAQ ─────────────────────────────────────────────────────────────────
+async function saveFaq() {
+  var btn = document.getElementById('save-faq-btn');
+  var ok  = document.getElementById('faq-ok');
+  var err = document.getElementById('faq-err');
+  ok.style.display = 'none'; err.style.display = 'none';
+  btn.disabled = true; btn.innerHTML = '<span class="spinner spinner-dark"></span>Sauvegarde…';
+  try {
+    await apiSave({ faq: document.getElementById('f-faq').value });
+    ok.style.display = 'inline';
+    setTimeout(() => { ok.style.display = 'none'; }, 5000);
+  } catch(e) {
+    err.textContent = e.message; err.style.display = 'inline';
+  } finally {
+    btn.disabled = false; btn.textContent = 'Sauvegarder la FAQ';
+  }
+}
+
+// ─── Iframe ───────────────────────────────────────────────────────────────────
+function refreshIframe() {
+  var iframe = document.getElementById('chatbot-iframe');
+  iframe.src = iframe.src;
+}
+
+// ─── Boot ─────────────────────────────────────────────────────────────────────
+init();
+</script>
+</body>
+</html>

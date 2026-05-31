@@ -1,5 +1,19 @@
 const REPO = 'ElliotNat12/chatbot-saas';
 const GITHUB_API = 'https://api.github.com';
+const crypto = require('crypto');
+
+function verifyJWT(token) {
+  const secret = process.env.JWT_SECRET || 'dev-secret-change-me';
+  const parts = (token || '').split('.');
+  if (parts.length !== 3) throw new Error('Invalid token format');
+  const [header, body, sig] = parts;
+  const expected = crypto.createHmac('sha256', secret).update(`${header}.${body}`).digest('base64')
+    .replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
+  if (sig !== expected) throw new Error('Invalid signature');
+  const payload = JSON.parse(Buffer.from(body, 'base64').toString());
+  if (payload.exp && Math.floor(Date.now() / 1000) > payload.exp) throw new Error('Token expired');
+  return payload;
+}
 
 async function getGithubFile(path, token) {
   const res = await fetch(`${GITHUB_API}/repos/${REPO}/contents/${path}`, {
@@ -99,8 +113,63 @@ async function getStatsData(businessName, days) {
 module.exports = async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, x-admin-secret');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, x-admin-secret, Authorization');
   if (req.method === 'OPTIONS') return res.status(200).end();
+
+  // ── JWT client path (Authorization: Bearer {token}) ──────────────────────
+  const authHeader = req.headers['authorization'] || '';
+  if (authHeader.startsWith('Bearer ')) {
+    let payload;
+    try { payload = verifyJWT(authHeader.slice(7)); } catch (e) {
+      return res.status(401).json({ error: 'Token invalide ou expiré' });
+    }
+    const jwtSlug = payload.slug;
+    const ghToken = process.env.GITHUB_TOKEN;
+
+    if (req.method === 'GET') {
+      try {
+        const data = await getFaqData(jwtSlug, ghToken);
+        const { _file, config, ...safe } = data;
+        return res.status(200).json({
+          slug: jwtSlug,
+          businessName: config?.businessName || jwtSlug,
+          accentColor: config?.accentColor || '#2563eb',
+          avatar: config?.avatar || '💬',
+          ...safe
+        });
+      } catch (err) {
+        return res.status(err.status || 500).json({ error: err.message });
+      }
+    }
+
+    if (req.method === 'POST') {
+      const { faq, phone, phoneHours, bookingUrl } = req.body || {};
+      try {
+        const file = await getGithubFile(`demo-${jwtSlug}/config.js`, ghToken);
+        if (!file) return res.status(404).json({ error: 'Config not found' });
+        const source = Buffer.from(file.content, 'base64').toString('utf-8');
+        const config = parseConfig(source);
+        if (!config) return res.status(422).json({ error: 'Could not parse config.js' });
+        if (faq !== undefined) config.faq = faq;
+        if (phone !== undefined) config.phone = phone;
+        if (phoneHours !== undefined) config.phoneHours = phoneHours;
+        if (bookingUrl !== undefined) config.bookingUrl = bookingUrl;
+        if (config.phone) config.errorMessage = `Je rencontre un problème. Contactez-nous au ${config.phone}.`;
+        const encoded = Buffer.from(`ChatbotSaaS.init(${JSON.stringify(config, null, 2)});\n`).toString('base64');
+        const putRes = await fetch(`${GITHUB_API}/repos/${REPO}/contents/demo-${jwtSlug}/config.js`, {
+          method: 'PUT',
+          headers: { 'Authorization': `Bearer ${ghToken}`, 'Accept': 'application/vnd.github+json', 'Content-Type': 'application/json' },
+          body: JSON.stringify({ message: `client update: ${jwtSlug}`, content: encoded, sha: file.sha })
+        });
+        if (!putRes.ok) return res.status(502).json({ error: 'GitHub push error', detail: await putRes.text() });
+        return res.status(200).json({ ok: true });
+      } catch (err) {
+        return res.status(500).json({ error: err.message });
+      }
+    }
+
+    return res.status(405).json({ error: 'Method not allowed' });
+  }
 
   const dataParam = req.method === 'GET' ? req.query.data : 'faq';
 

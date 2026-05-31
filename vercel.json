@@ -1,4 +1,7 @@
 {
+  "rewrites": [
+    { "source": "/client/:slug*", "destination": "/client/index.html" }
+  ],
   "crons": [
     {
       "path": "/api/weekly-report?secret=report-secret-elliot-2026",

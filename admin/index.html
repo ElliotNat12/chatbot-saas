@@ -268,6 +268,25 @@
   </div>
 </div>
 
+<!-- ── Invite modal ── -->
+<div class="modal-overlay" id="invite-modal">
+  <div class="modal" style="max-width:480px">
+    <div class="modal-title">🔗 Lien d'activation client</div>
+    <p style="font-size:13px;color:var(--muted);margin-bottom:1.25rem;line-height:1.6;">Envoyez ce lien à votre client pour qu'il active son espace et choisisse son mot de passe. <strong>Lien valable 7 jours.</strong></p>
+    <div class="field">
+      <label>Lien d'activation</label>
+      <div style="display:flex;gap:.5rem;margin-top:.35rem">
+        <input type="text" id="invite-link" readonly style="font-size:12px;cursor:text;color:var(--muted)" />
+        <button class="btn btn-secondary" id="invite-copy-btn" onclick="copyInviteLink()" style="white-space:nowrap;flex-shrink:0">Copier</button>
+      </div>
+    </div>
+    <div id="invite-err" style="font-size:13px;color:#dc2626;margin-top:.75rem;display:none"></div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeInviteModal()">Fermer</button>
+    </div>
+  </div>
+</div>
+
 <!-- ── Questionnaire modal ── -->
 <div class="modal-overlay" id="questionnaire-modal">
   <div class="modal" style="max-width:480px">
@@ -845,6 +864,7 @@ function renderClientCard(client) {
       <div class="mrr-display">${mrr ? mrr + '€/mois' : '—'}</div>
       <div style="display:flex;gap:.4rem">
         <a href="${client.url}" target="_blank" class="btn btn-sm btn-secondary" style="text-decoration:none;font-size:11px;padding:4px 10px">Ouvrir</a>
+        <button class="btn btn-sm btn-secondary" style="font-size:11px;padding:4px 10px" onclick="sendInvite('${client.slug}')">🔗 Lien</button>
         <button class="btn btn-sm btn-primary" style="font-size:11px;padding:4px 10px" onclick="switchToTester('${client.slug}')">Tester</button>
       </div>
     </div>
@@ -1603,6 +1623,42 @@ async function copyQLink() {
 }
 document.getElementById('questionnaire-modal').addEventListener('click', e => {
   if (e.target === e.currentTarget) closeQModal();
+});
+
+// ── Invite modal ──────────────────────────────────────────────────────────────
+async function sendInvite(slug) {
+  const errEl = document.getElementById('invite-err');
+  const linkEl = document.getElementById('invite-link');
+  errEl.style.display = 'none';
+  linkEl.value = 'Génération en cours…';
+  document.getElementById('invite-modal').classList.add('visible');
+  try {
+    const r = await apiFetch('/api/admin-deploy', {
+      method: 'POST',
+      body: JSON.stringify({ action: 'invite', slug })
+    });
+    const data = await r.json();
+    if (!r.ok) throw new Error(data.error || 'Erreur');
+    linkEl.value = data.inviteUrl || '';
+  } catch(e) {
+    linkEl.value = '';
+    errEl.textContent = e.message;
+    errEl.style.display = 'block';
+  }
+}
+function closeInviteModal() { document.getElementById('invite-modal').classList.remove('visible'); }
+async function copyInviteLink() {
+  const link = document.getElementById('invite-link').value;
+  const btn = document.getElementById('invite-copy-btn');
+  try { await navigator.clipboard.writeText(link); } catch {
+    const input = document.getElementById('invite-link');
+    input.select(); document.execCommand('copy');
+  }
+  btn.textContent = '✓ Copié';
+  setTimeout(() => { btn.textContent = 'Copier'; }, 1500);
+}
+document.getElementById('invite-modal').addEventListener('click', e => {
+  if (e.target === e.currentTarget) closeInviteModal();
 });
 
 // ── Global view loads after successful login (in checkPassword) ──
