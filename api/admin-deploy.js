@@ -24,6 +24,11 @@ function generateConfigJs(data) {
       ? `Je rencontre un problème. Contactez-nous au ${data.phone}.`
       : 'Je rencontre un problème. Veuillez réessayer.'
   };
+  if (data.ownerName) config.ownerName = data.ownerName;
+  if (data.launcherText) config.launcherText = data.launcherText;
+  if (data.homeSubtitle) config.homeSubtitle = data.homeSubtitle;
+  if (data.ecommerce === true) config.ecommerce = true;
+  if (data.notifyEmail) config.notifyEmail = data.notifyEmail;
   return `ChatbotSaaS.init(${JSON.stringify(config, null, 2)});\n`;
 }
 

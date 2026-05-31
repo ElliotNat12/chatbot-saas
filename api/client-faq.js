@@ -99,7 +99,19 @@ module.exports = async function handler(req, res) {
         return res.status(422).json({ error: 'Could not parse config.js' });
       }
       console.log('[client-faq] faq length=', (config.faq || '').length);
-      return res.status(200).json({ faq: config.faq || '', config });
+      return res.status(200).json({
+        faq: config.faq || '',
+        botName: config.botName || '',
+        ownerName: config.ownerName || '',
+        phone: config.phone || '',
+        bookingUrl: config.bookingUrl || '',
+        launcherText: config.launcherText || '',
+        homeSubtitle: config.homeSubtitle || '',
+        greeting: config.greeting || '',
+        ecommerce: config.ecommerce === true,
+        suggestions: Array.isArray(config.suggestions) ? config.suggestions : [],
+        config
+      });
     } catch (err) {
       console.error('[client-faq] GET exception:', err.message);
       return res.status(500).json({ error: err.message });

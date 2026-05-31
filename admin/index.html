@@ -367,6 +367,21 @@
     </div>
     <div class="field" style="margin-top:.75rem"><label>URL de réservation</label><input type="url" id="bookingUrl" placeholder="https://exemple.fr/reservation" /></div>
 
+    <div class="section-title">Personnalisation</div>
+    <div class="row">
+      <div class="field"><label>Prénom du responsable</label><input type="text" id="ownerName" placeholder="Pierre" /></div>
+      <div class="field"><label>Texte du launcher</label><input type="text" id="launcherText" placeholder="Une question ?" /></div>
+    </div>
+    <div class="field" style="margin-top:.75rem"><label>Sous-titre home screen</label><input type="text" id="homeSubtitle" placeholder="Spécialités · Ville" /></div>
+    <div class="field" style="margin-top:.75rem"><label>Message d'accueil <span style="color:var(--muted);font-weight:400">(optionnel)</span></label><textarea id="greeting" rows="2" placeholder="Bonjour ! Je suis [nom], comment puis-je vous aider ?"></textarea></div>
+
+    <div class="section-title">Options</div>
+    <div style="display:flex;align-items:center;gap:.75rem;margin-bottom:.75rem">
+      <input type="checkbox" id="ecommerce" style="width:16px;height:16px;cursor:pointer;flex-shrink:0" />
+      <label for="ecommerce" style="margin:0;cursor:pointer;font-size:13px;font-weight:400;color:var(--text)">Mode boutique en ligne — désactive les leads et le formulaire de contact</label>
+    </div>
+    <div class="field"><label>Email de notification des leads</label><input type="email" id="notifyEmail" placeholder="contact@exemple.fr" /></div>
+
     <div class="section-title">Suggestions (boutons rapides)</div>
     <div class="row" style="margin-bottom:.5rem">
       <div class="field"><input type="text" id="sug-0" placeholder="Suggestion 1" /></div>
@@ -430,6 +445,59 @@
     </div>
 
     <div id="tester-content" style="display:none">
+
+      <!-- BLOC 0 — Fiche client -->
+      <div id="client-info-bloc">
+        <div id="client-info-read">
+          <div class="faq-editor-row">
+            <div class="bloc-title">Fiche client</div>
+            <button class="btn btn-secondary btn-sm" onclick="enterClientInfoEdit()">Modifier</button>
+          </div>
+          <div id="client-info-display" style="font-size:13px;color:var(--muted);line-height:1.8;margin-bottom:.75rem"></div>
+        </div>
+        <div id="client-info-edit" style="display:none">
+          <div class="faq-editor-row">
+            <div class="bloc-title">Modifier les infos</div>
+            <div style="display:flex;gap:.5rem">
+              <button class="btn btn-secondary btn-sm" onclick="cancelClientInfoEdit()">Annuler</button>
+              <button class="btn btn-primary btn-sm" id="save-info-btn" onclick="saveClientInfo()">Sauvegarder & redéployer</button>
+            </div>
+          </div>
+          <div class="row" style="margin-bottom:.5rem">
+            <div class="field"><label>Nom du bot</label><input type="text" id="ci-botName" /></div>
+            <div class="field"><label>Prénom du responsable</label><input type="text" id="ci-ownerName" /></div>
+          </div>
+          <div class="row" style="margin-bottom:.5rem">
+            <div class="field"><label>Téléphone</label><input type="tel" id="ci-phone" /></div>
+            <div class="field"><label>URL réservation / boutique</label><input type="url" id="ci-bookingUrl" /></div>
+          </div>
+          <div class="row" style="margin-bottom:.5rem">
+            <div class="field"><label>Texte du launcher</label><input type="text" id="ci-launcherText" /></div>
+            <div class="field"><label>Sous-titre home screen</label><input type="text" id="ci-homeSubtitle" /></div>
+          </div>
+          <div class="field" style="margin-bottom:.5rem"><label>Message d'accueil</label><textarea id="ci-greeting" rows="2"></textarea></div>
+          <div style="display:flex;align-items:center;gap:.75rem;margin-bottom:.75rem">
+            <input type="checkbox" id="ci-ecommerce" style="width:16px;height:16px;cursor:pointer;flex-shrink:0" />
+            <label for="ci-ecommerce" style="margin:0;cursor:pointer;font-size:13px;font-weight:400;color:var(--text)">Mode boutique en ligne</label>
+          </div>
+          <div class="section-title" style="margin-top:.25rem">Suggestions</div>
+          <div class="row" style="margin-bottom:.5rem">
+            <div class="field"><input type="text" id="ci-sug-0" placeholder="Suggestion 1" /></div>
+            <div class="field"><input type="text" id="ci-sug-1" placeholder="Suggestion 2" /></div>
+          </div>
+          <div class="row" style="margin-bottom:.5rem">
+            <div class="field"><input type="text" id="ci-sug-2" placeholder="Suggestion 3" /></div>
+            <div class="field"><input type="text" id="ci-sug-3" placeholder="Suggestion 4" /></div>
+          </div>
+          <div class="field" style="margin-bottom:.75rem">
+            <input type="text" id="ci-sug-4" placeholder="Suggestion 5" />
+          </div>
+          <div class="err-msg" id="ci-err"></div>
+          <div style="display:none;font-size:12px;color:var(--green);margin-top:.5rem" id="ci-ok">Mis à jour. Vercel redéploie dans ~30 secondes.</div>
+        </div>
+        <hr class="sep">
+      </div>
+
       <!-- BLOC A — Métriques + Score -->
       <div style="display:flex;gap:1.5rem;align-items:flex-start;margin-bottom:1.5rem;flex-wrap:wrap">
         <div class="t-metrics" style="flex:1">
@@ -553,6 +621,7 @@ const S = {
   crmLoaded: false,
   testerSlug: null,
   testerBusinessName: null,
+  currentConfig: null,
   draggedId: null,
   notesTimers: {},
   adminSecret: null
@@ -817,7 +886,8 @@ async function analyzeSite() {
   const btn = document.getElementById('analyze-btn');
   btn.disabled = true;
   btn.innerHTML = '<span class="spinner"></span>Analyse…';
-  ['businessName','clientSlug','botName','avatar','phone','phoneHours','bookingUrl','faq'].forEach(id => document.getElementById(id).value = '');
+  ['businessName','clientSlug','botName','avatar','phone','phoneHours','bookingUrl','faq','ownerName','launcherText','homeSubtitle','greeting','notifyEmail'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('ecommerce').checked = false;
   [0,1,2,3,4].forEach(i => { const el = document.getElementById('sug-' + i); if (el) el.value = ''; });
   document.getElementById('sector').value = '';
   document.getElementById('accentColor').value = '#2563eb';
@@ -857,6 +927,12 @@ async function deploySite() {
     bookingUrl: document.getElementById('bookingUrl').value.trim(),
     faq: document.getElementById('faq').value.trim(),
     suggestions: suggestions.length ? suggestions : undefined,
+    ownerName: document.getElementById('ownerName').value.trim() || undefined,
+    greeting: document.getElementById('greeting').value.trim() || undefined,
+    launcherText: document.getElementById('launcherText').value.trim() || undefined,
+    homeSubtitle: document.getElementById('homeSubtitle').value.trim() || undefined,
+    ecommerce: document.getElementById('ecommerce').checked ? true : undefined,
+    notifyEmail: document.getElementById('notifyEmail').value.trim() || undefined,
   };
   if (!payload.clientSlug) return showErr('deploy-err', 'Le slug est obligatoire.');
   if (!payload.businessName) return showErr('deploy-err', 'Le nom de l\'entreprise est obligatoire.');
@@ -1034,8 +1110,11 @@ async function onClientSelect(slug) {
       renderTesterStats(stats);
     }
     if (faqRes.ok) {
-      const { faq } = await faqRes.json();
-      document.getElementById('t-faq-editor').value = faq || '';
+      const data = await faqRes.json();
+      document.getElementById('t-faq-editor').value = data.faq || '';
+      S.currentConfig = data.config || {};
+      renderClientInfoRead(S.currentConfig);
+      cancelClientInfoEdit();
     }
   } catch {}
 
@@ -1144,6 +1223,92 @@ async function saveFaqForClient() {
 function reloadIframe() {
   const iframe = document.getElementById('t-iframe');
   iframe.src = iframe.src;
+}
+
+// ════════════════════════════════
+// TAB 4 — FICHE CLIENT
+// ════════════════════════════════
+function renderClientInfoRead(cfg) {
+  const el = document.getElementById('client-info-display');
+  if (!el) return;
+  const parts = [
+    cfg.botName && `Bot : <strong style="color:var(--text)">${cfg.botName}</strong>`,
+    cfg.ownerName && `Responsable : ${cfg.ownerName}`,
+    cfg.phone && `Tél : ${cfg.phone}`,
+    cfg.bookingUrl && `Booking : <a href="${cfg.bookingUrl}" target="_blank" style="color:var(--accent-h)">${cfg.bookingUrl}</a>`,
+    cfg.launcherText && `Launcher : "${cfg.launcherText}"`,
+    cfg.homeSubtitle && `Sous-titre : ${cfg.homeSubtitle}`,
+    cfg.ecommerce && `Mode : <span style="color:var(--accent-h)">boutique en ligne</span>`,
+    Array.isArray(cfg.suggestions) && cfg.suggestions.length && `Suggestions : ${cfg.suggestions.join(' · ')}`,
+  ].filter(Boolean);
+  el.innerHTML = parts.length ? parts.join('<br>') : '<em>Aucune info supplémentaire.</em>';
+}
+
+function enterClientInfoEdit() {
+  const cfg = S.currentConfig || {};
+  document.getElementById('ci-botName').value = cfg.botName || '';
+  document.getElementById('ci-ownerName').value = cfg.ownerName || '';
+  document.getElementById('ci-phone').value = cfg.phone || '';
+  document.getElementById('ci-bookingUrl').value = cfg.bookingUrl || '';
+  document.getElementById('ci-launcherText').value = cfg.launcherText || '';
+  document.getElementById('ci-homeSubtitle').value = cfg.homeSubtitle || '';
+  document.getElementById('ci-greeting').value = cfg.greeting || '';
+  document.getElementById('ci-ecommerce').checked = cfg.ecommerce === true;
+  const sugs = Array.isArray(cfg.suggestions) ? cfg.suggestions : [];
+  [0,1,2,3,4].forEach(i => { const el = document.getElementById('ci-sug-' + i); if (el) el.value = sugs[i] || ''; });
+  hideErr('ci-err');
+  document.getElementById('ci-ok').style.display = 'none';
+  document.getElementById('client-info-read').style.display = 'none';
+  document.getElementById('client-info-edit').style.display = 'block';
+}
+
+function cancelClientInfoEdit() {
+  document.getElementById('client-info-edit').style.display = 'none';
+  document.getElementById('client-info-read').style.display = 'block';
+}
+
+async function saveClientInfo() {
+  if (!S.testerSlug) return;
+  hideErr('ci-err');
+  document.getElementById('ci-ok').style.display = 'none';
+  const btn = document.getElementById('save-info-btn');
+  btn.disabled = true; btn.innerHTML = '<span class="spinner"></span>Sauvegarde…';
+
+  const cfg = S.currentConfig || {};
+  const suggestions = [0,1,2,3,4].map(i => (document.getElementById('ci-sug-' + i)?.value || '').trim()).filter(Boolean);
+
+  const payload = {
+    clientSlug: S.testerSlug,
+    businessName: cfg.businessName || S.testerBusinessName || '',
+    botName: document.getElementById('ci-botName').value.trim() || cfg.botName || '',
+    avatar: cfg.avatar || '💬',
+    accentColor: cfg.accentColor || '#2563eb',
+    phone: document.getElementById('ci-phone').value.trim(),
+    phoneHours: cfg.phoneHours || '',
+    bookingUrl: document.getElementById('ci-bookingUrl').value.trim(),
+    ownerName: document.getElementById('ci-ownerName').value.trim() || undefined,
+    launcherText: document.getElementById('ci-launcherText').value.trim() || undefined,
+    homeSubtitle: document.getElementById('ci-homeSubtitle').value.trim() || undefined,
+    greeting: document.getElementById('ci-greeting').value.trim() || undefined,
+    ecommerce: document.getElementById('ci-ecommerce').checked ? true : undefined,
+    suggestions: suggestions.length ? suggestions : (cfg.suggestions || undefined),
+    notifyEmail: cfg.notifyEmail || undefined,
+    faq: cfg.faq || '',
+  };
+
+  try {
+    const r = await apiFetch('/api/admin-deploy', { method: 'POST', body: JSON.stringify(payload) });
+    const d = await r.json();
+    if (!r.ok || !d.url) throw new Error(d.error || 'Erreur de déploiement');
+    Object.assign(S.currentConfig, payload);
+    renderClientInfoRead(S.currentConfig);
+    document.getElementById('ci-ok').style.display = 'block';
+    setTimeout(() => cancelClientInfoEdit(), 2000);
+  } catch (err) {
+    showErr('ci-err', err.message);
+  } finally {
+    btn.disabled = false; btn.textContent = 'Sauvegarder & redéployer';
+  }
 }
 
 // ════════════════════════════════
