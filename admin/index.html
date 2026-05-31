@@ -329,7 +329,8 @@
       <button class="btn btn-secondary" id="analyze-btn" onclick="analyzeSite()">Analyser le site</button>
     </div>
     <div class="field" style="margin-top:.6rem">
-      <textarea id="extra-urls" rows="2" placeholder="Pages importantes à analyser — une URL par ligne (optionnel) — ex: https://site.fr/tarifs"></textarea>
+      <label>Pages supplémentaires à analyser <span style="color:var(--muted);font-weight:400">(optionnel)</span></label>
+      <textarea id="extra-urls" rows="2" placeholder="Une URL par ligne — ex: https://site.fr/tarifs" style="margin-top:.35rem"></textarea>
     </div>
     <div class="err-msg" id="analyze-err"></div>
 
@@ -351,11 +352,23 @@
     </div>
     <div class="row triple" style="margin-top:.75rem">
       <div class="field"><label>Nom du bot</label><input type="text" id="botName" placeholder="Tank" /></div>
-      <div class="field"><label>Avatar (emoji)</label><input type="text" id="avatar" placeholder="🪖" maxlength="4" /></div>
-      <div class="field"><label>Couleur principale</label>
+      <div class="field" style="position:relative">
+        <label>Avatar (emoji)</label>
+        <div style="display:flex;gap:.4rem;align-items:center">
+          <input type="text" id="avatar" placeholder="🪖" maxlength="4" style="flex:1" oninput="updateLauncherPreview()" />
+          <button type="button" class="btn btn-secondary" onclick="toggleEmojiPicker(event)" style="padding:8px 10px;font-size:13px;white-space:nowrap;flex-shrink:0">Choisir</button>
+        </div>
+        <div id="emoji-panel" style="display:none;position:absolute;top:calc(100% + 4px);left:0;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:.75rem;z-index:50;max-height:240px;overflow-y:auto;min-width:280px;box-shadow:0 8px 24px rgba(0,0,0,.4)"></div>
+      </div>
+      <div class="field">
+        <label>Couleur principale</label>
         <div class="color-row">
-          <input type="color" id="accentColorPicker" value="#2563eb" oninput="document.getElementById('accentColor').value=this.value" />
+          <input type="color" id="accentColorPicker" value="#2563eb" oninput="document.getElementById('accentColor').value=this.value;updateLauncherPreview()" />
           <input type="text" id="accentColor" value="#2563eb" placeholder="#2563eb" oninput="syncColor(this.value)" />
+        </div>
+        <div style="margin-top:.6rem;display:flex;align-items:center;gap:.75rem">
+          <div id="launcher-preview" style="width:48px;height:48px;border-radius:50%;background:#2563eb;display:flex;align-items:center;justify-content:center;font-size:22px;box-shadow:0 4px 14px rgba(0,0,0,.35);flex-shrink:0">💬</div>
+          <span style="font-size:11px;color:var(--muted)">Aperçu du launcher</span>
         </div>
       </div>
     </div>
@@ -373,7 +386,7 @@
       <div class="field"><label>Texte du launcher</label><input type="text" id="launcherText" placeholder="Une question ?" /></div>
     </div>
     <div class="field" style="margin-top:.75rem"><label>Sous-titre home screen</label><input type="text" id="homeSubtitle" placeholder="Spécialités · Ville" /></div>
-    <div class="field" style="margin-top:.75rem"><label>Message d'accueil <span style="color:var(--muted);font-weight:400">(optionnel)</span></label><textarea id="greeting" rows="2" placeholder="Bonjour ! Je suis [nom], comment puis-je vous aider ?"></textarea></div>
+    <div class="field" style="margin-top:.75rem"><label>Message d'accueil <span style="color:var(--muted);font-weight:400">(optionnel)</span></label><textarea id="greeting" rows="2" placeholder="Ex: Bonjour ! Je suis [Nom], l'assistant de [Entreprise]. Comment puis-je vous aider ?"></textarea></div>
 
     <div class="section-title">Options</div>
     <div style="display:flex;align-items:center;gap:.75rem;margin-bottom:.75rem">
@@ -391,11 +404,31 @@
       <div class="field"><input type="text" id="sug-2" placeholder="Suggestion 3" /></div>
       <div class="field"><input type="text" id="sug-3" placeholder="Suggestion 4" /></div>
     </div>
-    <div class="field" style="margin-bottom:.75rem">
+    <div class="field" style="margin-bottom:.5rem">
       <input type="text" id="sug-4" placeholder="Suggestion 5 (optionnelle)" />
     </div>
+    <div style="margin-bottom:.75rem">
+      <button type="button" class="btn btn-secondary btn-sm" id="toggle-sug-en-btn" onclick="toggleSugEn()">+ Ajouter suggestions en anglais</button>
+    </div>
+    <div id="sug-en-bloc" style="display:none">
+      <div class="section-title" style="margin-top:0">Suggestions EN (anglais)</div>
+      <div class="row" style="margin-bottom:.5rem">
+        <div class="field"><input type="text" id="sug-en-0" placeholder="Suggestion EN 1" /></div>
+        <div class="field"><input type="text" id="sug-en-1" placeholder="Suggestion EN 2" /></div>
+      </div>
+      <div class="row" style="margin-bottom:.5rem">
+        <div class="field"><input type="text" id="sug-en-2" placeholder="Suggestion EN 3" /></div>
+        <div class="field"><input type="text" id="sug-en-3" placeholder="Suggestion EN 4" /></div>
+      </div>
+      <div class="field" style="margin-bottom:.75rem">
+        <input type="text" id="sug-en-4" placeholder="Suggestion EN 5" />
+      </div>
+    </div>
 
-    <div class="section-title">Base de connaissances (FAQ)</div>
+    <div class="section-title" style="display:flex;align-items:center;gap:.5rem">
+      Base de connaissances (FAQ)
+      <span title="La FAQ contient les infos spécifiques à ce client. Plus elle est complète, mieux le bot répond. Ajoutez : horaires exacts, tarifs, conditions, FAQ clients, informations pratiques." style="cursor:help;font-size:11px;color:var(--muted);background:var(--surface2);border:1px solid var(--border);border-radius:50%;width:16px;height:16px;display:inline-flex;align-items:center;justify-content:center;font-weight:700;flex-shrink:0">?</span>
+    </div>
     <textarea id="faq" rows="12" placeholder="Cliquez sur 'Analyser le site' pour remplir automatiquement…"></textarea>
     <div class="err-msg" id="deploy-err"></div>
     <button class="btn btn-deploy" id="deploy-btn" onclick="deploySite()">Déployer le chatbot →</button>
@@ -636,6 +669,23 @@ const SUGGESTIONS_TEMPLATES = {
   ARTISAN: ["Demander un devis", "Zone d'intervention ?", "Délai d'intervention ?", "Vos certifications ?", "Nous appeler"],
   GENERIQUE: ["En savoir plus", "Nos services", "Nos tarifs", "Horaires", "Nous contacter"],
 };
+
+const SUGGESTIONS_TEMPLATES_EN = {
+  RESTAURANT: ["How much does it cost?", "Book a table", "Opening hours?", "See the menu", "Call us"],
+  COMMERCE: ["What products do you offer?", "Shipping & delivery?", "Available sizes?", "How to order?", "Contact us"],
+  COACH: ["Discovery session?", "What are your rates?", "How to book?", "Your program?", "Contact us"],
+  ARTISAN: ["Request a quote", "Service area?", "How long does it take?", "Your certifications?", "Call us"],
+  GENERIQUE: ["Learn more", "Our services", "Pricing", "Opening hours", "Contact us"],
+};
+
+const EMOJI_CATEGORIES = {
+  'Restaurant': ['🍽️','🍜','🍕','🥗','🧆','🥘','🍱','🥩','🍣','🍰','☕','🍹'],
+  'Commerce': ['👗','👘','👶','🧸','💄','👟','🛍️','💍','🧴','🎁','🪴','🕯️'],
+  'Coach / Sport': ['💪','🏋️','🧘','🚴','🏃','⚽','🎯','🏊','🤸','🥊','🏆','🎽'],
+  'Artisan / BTP': ['🔨','🪚','🔧','🏗️','🧱','🪟','🔌','🚿','🛁','🪣','🔑','🏠'],
+  'Tech / Web': ['💻','🖥️','📱','⌨️','🖱️','🔐','📊','📈','🤖','⚡','🌐','🛡️'],
+  'Autre': ['💬','⭐','🎪','🌟','💡','🎯','🦋','🌸','🌊','🎨','🎭','🎪'],
+};
 const NEXT_STATUS = { prospect: 'demo', demo: 'client' };
 const STATUS_LABELS = { prospect: 'Prospect', demo: 'Démo envoyée', client: 'Client actif' };
 const STEPS = [
@@ -831,11 +881,59 @@ function cycleStatus(slug, svc) {
 function onSectorChange(sector) {
   if (!sector) return;
   const tpl = SUGGESTIONS_TEMPLATES[sector] || SUGGESTIONS_TEMPLATES.GENERIQUE;
-  tpl.forEach((s, i) => {
-    const el = document.getElementById('sug-' + i);
-    if (el) el.value = s;
-  });
+  tpl.forEach((s, i) => { const el = document.getElementById('sug-' + i); if (el) el.value = s; });
+  const tplEn = SUGGESTIONS_TEMPLATES_EN[sector] || SUGGESTIONS_TEMPLATES_EN.GENERIQUE;
+  tplEn.forEach((s, i) => { const el = document.getElementById('sug-en-' + i); if (el) el.value = s; });
 }
+
+function toggleSugEn() {
+  const bloc = document.getElementById('sug-en-bloc');
+  const btn = document.getElementById('toggle-sug-en-btn');
+  const visible = bloc.style.display !== 'none';
+  bloc.style.display = visible ? 'none' : 'block';
+  btn.textContent = visible ? '+ Ajouter suggestions en anglais' : '− Masquer suggestions en anglais';
+}
+
+function updateLauncherPreview() {
+  const color = document.getElementById('accentColor').value || '#2563eb';
+  const emoji = document.getElementById('avatar').value || '💬';
+  const preview = document.getElementById('launcher-preview');
+  if (preview) {
+    preview.style.background = /^#[0-9a-fA-F]{3,6}$/.test(color) ? color : '#2563eb';
+    preview.textContent = emoji;
+  }
+}
+
+function buildEmojiPanel() {
+  const panel = document.getElementById('emoji-panel');
+  if (panel.innerHTML) return;
+  panel.innerHTML = Object.entries(EMOJI_CATEGORIES).map(([cat, emojis]) =>
+    `<div style="margin-bottom:.5rem">
+      <div style="font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin-bottom:.25rem">${cat}</div>
+      <div style="display:flex;flex-wrap:wrap;gap:1px">${emojis.map(e =>
+        `<button type="button" onclick="selectEmoji('${e}')" style="background:none;border:none;cursor:pointer;font-size:20px;padding:3px 5px;border-radius:5px;line-height:1" onmouseover="this.style.background='var(--surface2)'" onmouseout="this.style.background='none'">${e}</button>`
+      ).join('')}</div>
+    </div>`
+  ).join('');
+}
+
+function toggleEmojiPicker(e) {
+  e.stopPropagation();
+  buildEmojiPanel();
+  const panel = document.getElementById('emoji-panel');
+  panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
+}
+
+function selectEmoji(emoji) {
+  document.getElementById('avatar').value = emoji;
+  document.getElementById('emoji-panel').style.display = 'none';
+  updateLauncherPreview();
+}
+
+document.addEventListener('click', () => {
+  const panel = document.getElementById('emoji-panel');
+  if (panel) panel.style.display = 'none';
+});
 
 function autoSlug() {
   const name = document.getElementById('businessName').value;
@@ -844,7 +942,7 @@ function autoSlug() {
     .replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
 }
 function syncColor(hex) {
-  if (/^#[0-9a-fA-F]{6}$/.test(hex)) document.getElementById('accentColorPicker').value = hex;
+  if (/^#[0-9a-fA-F]{6}$/.test(hex)) { document.getElementById('accentColorPicker').value = hex; updateLauncherPreview(); }
 }
 
 function autoFillFromFaq(faq) {
@@ -888,10 +986,16 @@ async function analyzeSite() {
   btn.innerHTML = '<span class="spinner"></span>Analyse…';
   ['businessName','clientSlug','botName','avatar','phone','phoneHours','bookingUrl','faq','ownerName','launcherText','homeSubtitle','greeting','notifyEmail'].forEach(id => document.getElementById(id).value = '');
   document.getElementById('ecommerce').checked = false;
-  [0,1,2,3,4].forEach(i => { const el = document.getElementById('sug-' + i); if (el) el.value = ''; });
+  [0,1,2,3,4].forEach(i => {
+    const el = document.getElementById('sug-' + i); if (el) el.value = '';
+    const elEn = document.getElementById('sug-en-' + i); if (elEn) elEn.value = '';
+  });
   document.getElementById('sector').value = '';
+  const sugEnBloc = document.getElementById('sug-en-bloc');
+  if (sugEnBloc) { sugEnBloc.style.display = 'none'; document.getElementById('toggle-sug-en-btn').textContent = '+ Ajouter suggestions en anglais'; }
   document.getElementById('accentColor').value = '#2563eb';
   document.getElementById('accentColorPicker').value = '#2563eb';
+  updateLauncherPreview();
   document.getElementById('success-card').classList.remove('visible');
   hideErr('deploy-err');
   console.log('reset ok');
@@ -916,6 +1020,7 @@ async function deploySite() {
   hideErr('deploy-err');
   document.getElementById('success-card').classList.remove('visible');
   const suggestions = [0,1,2,3,4].map(i => (document.getElementById('sug-' + i)?.value || '').trim()).filter(Boolean);
+  const suggestionsEn = [0,1,2,3,4].map(i => (document.getElementById('sug-en-' + i)?.value || '').trim()).filter(Boolean);
   const payload = {
     clientSlug: document.getElementById('clientSlug').value.trim(),
     businessName: document.getElementById('businessName').value.trim(),
@@ -927,6 +1032,7 @@ async function deploySite() {
     bookingUrl: document.getElementById('bookingUrl').value.trim(),
     faq: document.getElementById('faq').value.trim(),
     suggestions: suggestions.length ? suggestions : undefined,
+    suggestionsEn: suggestionsEn.length ? suggestionsEn : undefined,
     ownerName: document.getElementById('ownerName').value.trim() || undefined,
     greeting: document.getElementById('greeting').value.trim() || undefined,
     launcherText: document.getElementById('launcherText').value.trim() || undefined,

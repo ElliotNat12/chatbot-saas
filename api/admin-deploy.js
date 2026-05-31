@@ -29,6 +29,7 @@ function generateConfigJs(data) {
   if (data.homeSubtitle) config.homeSubtitle = data.homeSubtitle;
   if (data.ecommerce === true) config.ecommerce = true;
   if (data.notifyEmail) config.notifyEmail = data.notifyEmail;
+  if (Array.isArray(data.suggestionsEn) && data.suggestionsEn.length) config.suggestionsEn = data.suggestionsEn;
   return `ChatbotSaaS.init(${JSON.stringify(config, null, 2)});\n`;
 }
 
