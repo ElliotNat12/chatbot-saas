@@ -230,6 +230,7 @@ module.exports = async function handler(req, res) {
       const accentColor  = config?.accentColor  || '#2563eb';
       const sector       = detectSector(config?.faq || '');
       const sectorInfo   = QUESTIONNAIRES[sector];
+      console.log('[onboarding] sector=', sector, 'questions=', sectorInfo.questions.length);
       res.setHeader('Content-Type', 'text/html; charset=utf-8');
       return res.status(200).send(renderPage(businessName, accentColor, slug, sectorInfo));
     } catch (err) {
