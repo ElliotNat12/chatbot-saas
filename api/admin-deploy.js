@@ -192,7 +192,7 @@ module.exports = async function handler(req, res) {
         const err = await upsertRes.text();
         return res.status(502).json({ error: 'Supabase upsert error', detail: err });
       }
-      const inviteUrl = `${VERCEL_URL}/api/client-auth?slug=${encodeURIComponent(slug)}&token=${setup_token}`;
+      const inviteUrl = `https://chatbot-saas-nine.vercel.app/api/client-auth?slug=${encodeURIComponent(slug)}&token=${setup_token}`;
       return res.status(200).json({ ok: true, inviteUrl, expiresAt: expires });
     } catch (err) {
       return res.status(500).json({ error: err.message });
