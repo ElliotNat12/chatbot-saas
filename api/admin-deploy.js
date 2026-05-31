@@ -183,10 +183,15 @@ module.exports = async function handler(req, res) {
     try {
       const setup_token = crypto.randomUUID();
       const expires = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
-      const upsertRes = await fetch(`${process.env.SUPABASE_URL}/rest/v1/client_auth`, {
+      const upsertRes = await fetch(`${process.env.SUPABASE_URL}/rest/v1/client_auth?on_conflict=slug`, {
         method: 'POST',
-        headers: { ...svcH(), 'Prefer': 'resolution=merge-duplicates,return=minimal' },
-        body: JSON.stringify({ slug, email: email || null, setup_token, setup_token_expires_at: expires })
+        headers: {
+          'apikey': process.env.SUPABASE_SERVICE_KEY,
+          'Authorization': `Bearer ${process.env.SUPABASE_SERVICE_KEY}`,
+          'Content-Type': 'application/json',
+          'Prefer': 'resolution=merge-duplicates'
+        },
+        body: JSON.stringify({ slug, setup_token, setup_token_expires_at: expires })
       });
       if (!upsertRes.ok) {
         const err = await upsertRes.text();
