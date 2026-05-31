@@ -328,6 +328,9 @@
       <input type="url" id="site-url" placeholder="https://exemple.fr" />
       <button class="btn btn-secondary" id="analyze-btn" onclick="analyzeSite()">Analyser le site</button>
     </div>
+    <div class="field" style="margin-top:.6rem">
+      <textarea id="extra-urls" rows="2" placeholder="Pages importantes à analyser — une URL par ligne (optionnel) — ex: https://site.fr/tarifs"></textarea>
+    </div>
     <div class="err-msg" id="analyze-err"></div>
 
     <div class="section-title">Identité</div>
@@ -823,7 +826,11 @@ async function analyzeSite() {
   hideErr('deploy-err');
   console.log('reset ok');
   try {
-    const res = await fetch('/api/scrape', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ url }) });
+    const extraUrlsRaw = document.getElementById('extra-urls').value.trim();
+    const extraUrls = extraUrlsRaw
+      ? extraUrlsRaw.split('\n').map(u => u.trim()).filter(u => u.startsWith('http'))
+      : [];
+    const res = await fetch('/api/scrape', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ url, ...(extraUrls.length && { extraUrls }) }) });
     const data = await res.json();
     if (!res.ok || !data.faq) throw new Error(data.error || 'Erreur scrape');
     document.getElementById('faq').value = data.faq;

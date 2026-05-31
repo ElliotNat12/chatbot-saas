@@ -1,5 +1,46 @@
 const GLOBAL_TIMEOUT_MS = 90_000;
 const POLL_INTERVAL_MS = 2_000;
+const CLAUDE_BUFFER_MS = 10_000; // reserve this much time for Claude at the end
+const PRIORITY_KEYWORDS = ['contact', 'faq', 'livraison', 'tarifs', 'about', 'a-propos', 'conditions', 'cgv', 'mentions'];
+
+async function scrapeIndividual(pageUrl, apiKey) {
+  try {
+    const res = await fetch('https://api.firecrawl.dev/v2/scrape', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${apiKey}`
+      },
+      body: JSON.stringify({ url: pageUrl, formats: ['markdown'] })
+    });
+    if (!res.ok) return '';
+    const data = await res.json();
+    return data?.data?.markdown || data?.markdown || '';
+  } catch {
+    return '';
+  }
+}
+
+function extractPriorityLinks(markdown, baseUrl) {
+  let baseOrigin;
+  try { baseOrigin = new URL(baseUrl).origin; } catch { return []; }
+  const found = new Set();
+  const urlRe = /(?:\]\(|href=["']?)(https?:\/\/[^\s"')>\n]+|\/[^\s"')>\n]+)/g;
+  let match;
+  while ((match = urlRe.exec(markdown)) !== null) {
+    const raw = match[1];
+    try {
+      const full = new URL(raw, baseOrigin).href.split('?')[0].split('#')[0];
+      if (full.startsWith(baseOrigin)) {
+        const path = new URL(full).pathname.toLowerCase();
+        if (PRIORITY_KEYWORDS.some(kw => path.includes(kw))) {
+          found.add(full);
+        }
+      }
+    } catch {}
+  }
+  return [...found];
+}
 
 module.exports = async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -9,7 +50,7 @@ module.exports = async function handler(req, res) {
   if (req.method === 'OPTIONS') return res.status(200).end();
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
-  const { url } = req.body;
+  const { url, extraUrls = [] } = req.body;
   if (!url) return res.status(400).json({ error: 'Missing url' });
 
   const deadline = Date.now() + GLOBAL_TIMEOUT_MS;
@@ -66,16 +107,39 @@ module.exports = async function handler(req, res) {
       }
     }
 
-    // 3. Concatenate all page markdowns
+    // 3. Concatenate crawled pages
     const pages = crawlData?.data ?? [];
-    const markdown = pages
+    const crawledUrls = new Set(
+      pages.map(p => p?.metadata?.sourceURL || p?.url || '').filter(Boolean)
+    );
+    const mainMarkdown = pages
       .map(p => p?.markdown || '')
       .filter(Boolean)
       .join('\n\n---\n\n');
 
-    if (!markdown) return res.status(502).json({ error: 'No content returned by Firecrawl' });
+    if (!mainMarkdown) return res.status(502).json({ error: 'No content returned by Firecrawl' });
 
-    // 4. Extract structured business info with Claude
+    // 4. Detect priority pages from crawled content and scrape if missing
+    const priorityLinks = extractPriorityLinks(mainMarkdown, url);
+    const validExtraUrls = Array.isArray(extraUrls)
+      ? extraUrls.map(u => (u || '').trim()).filter(u => u.startsWith('http'))
+      : [];
+
+    const toScrape = [...new Set([
+      ...priorityLinks.filter(u => !crawledUrls.has(u)),
+      ...validExtraUrls.filter(u => !crawledUrls.has(u))
+    ])];
+
+    const extraMarkdowns = [];
+    for (const pageUrl of toScrape) {
+      if (Date.now() + CLAUDE_BUFFER_MS >= deadline) break;
+      const content = await scrapeIndividual(pageUrl, process.env.FIRECRAWL_API_KEY);
+      if (content) extraMarkdowns.push(content);
+    }
+
+    const markdown = [mainMarkdown, ...extraMarkdowns].join('\n\n---\n\n');
+
+    // 5. Extract structured business info with Claude
     if (Date.now() >= deadline) {
       return res.status(504).json({ error: 'Timeout before Claude call' });
     }
@@ -124,7 +188,6 @@ ${markdown}`;
     }
 
     const claudeData = await claudeRes.json();
-    // Prepend the assistant prefill that Claude continued from
     const rawText = claudeData?.content?.[0]?.text || '';
     const faq = 'ENTREPRISE:' + rawText;
 
