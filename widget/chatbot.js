@@ -475,6 +475,9 @@
         : ['Orange brique', 'Framboise', 'Vert émeraude', 'Noir'];
       const sizes = ['S', 'M', 'L', 'XL'];
       tags.forEach(tag => {
+        if (tag.type === 'couleurs') {
+          messages.querySelectorAll('.cb-shop-btns').forEach(el => el.remove());
+        }
         const wrap = document.createElement('div');
         wrap.className = 'cb-shop-btns';
         if (tag.type === 'couleurs') {
@@ -482,7 +485,7 @@
             const btn = document.createElement('button');
             btn.className = 'cb-color-btn';
             btn.textContent = label;
-            btn.onclick = () => { wrap.remove(); sendMsg(label); };
+            btn.addEventListener('click', () => { wrap.remove(); sendMsg(label); }, { once: true });
             wrap.appendChild(btn);
           });
         } else if (tag.type === 'tailles') {
@@ -490,7 +493,7 @@
             const btn = document.createElement('button');
             btn.className = 'cb-size-btn';
             btn.textContent = size;
-            btn.onclick = () => { wrap.remove(); sendMsg(size); };
+            btn.addEventListener('click', () => { wrap.remove(); sendMsg(size); }, { once: true });
             wrap.appendChild(btn);
           });
         } else if (tag.type === 'panier' && storeUrl) {
@@ -500,7 +503,7 @@
           a.href = fallbackUrl;
           a.rel = 'noopener noreferrer';
           a.textContent = tag.label;
-          a.addEventListener('click', (e) => { e.preventDefault(); addToCart(tag.id, fallbackUrl); });
+          a.addEventListener('click', (e) => { e.preventDefault(); addToCart(tag.id, fallbackUrl); }, { once: true });
           wrap.appendChild(a);
         }
         if (wrap.children.length) {
@@ -597,12 +600,23 @@
     function parseMarkdownLinks(text) {
       console.log('[parseMarkdownLinks] input:', text.substring(0, 300));
       const links = [];
-      const clean = text.replace(/\[([^\]]+)\]\((https?:\/\/[^)]+)\)/g, (_, label, url) => {
-        links.push({ label: label.trim(), url });
-        return '';
-      }).trim();
+      const storeUrl = cfg.shopify?.storeUrl || '';
+      const clean = text
+        .replace(/\[([^\]]+)\]\((https?:\/\/[^)]+)\)/g, (_, label, url) => {
+          links.push({ label: label.trim(), url });
+          return '';
+        })
+        .replace(/\[([^\]]+)\]\((\/cart\/[^)]+)\)/g, (_, label, path) => {
+          links.push({ label: label.trim(), url: storeUrl + path });
+          return '';
+        })
+        .replace(/https?:\/\/\S*\/cart\/\d+[^)\s]*/g, (url) => {
+          links.push({ label: url, url });
+          return '';
+        })
+        .trim();
       if (links.length) console.log('[parseMarkdownLinks] found', links.length, 'link(s):', links);
-      else if (/https?:\/\//.test(text)) console.log('[parseMarkdownLinks] URL in text but no match — raw:', text);
+      else console.log('[parseMarkdownLinks] no links found');
       return { clean, links };
     }
 
@@ -925,7 +939,7 @@ Dès le premier message du visiteur, détecte sa langue et réponds dans cette m
 ## CE QUE TU SAIS
 ${cfg.faq || ''}
 
-NE DIS JAMAIS : "Parfait !", "Excellent !", "Excellent choix !", "Merveilleux !", "Super !", "Très bon choix !", "C'est noté !", "Bien sûr !", "Absolument !", "Avec plaisir !". Commence chaque réponse directement par l'information, sans validation.
+NE DIS JAMAIS : "Parfait !", "Excellent !", "Excellent choix !", "Merveilleux !", "Super !", "Très bon choix !", "C'est noté !", "Bien sûr !", "Absolument !", "Avec plaisir !", "Perfect choice!", "Great choice!", "Wonderful choice!". Commence chaque réponse directement par l'information, sans validation.
 
 ## TON ET STYLE
 - Vouvoiement systématique
