@@ -415,6 +415,20 @@
       });
     }
 
+    function renderBotText(text, container) {
+      const parts = text.split(/\*\*([^*]+)\*\*/g);
+      parts.forEach((part, i) => {
+        if (!part) return;
+        if (i % 2 === 1) {
+          const strong = document.createElement('strong');
+          strong.textContent = part;
+          container.appendChild(strong);
+        } else {
+          linkifyPhones(part, container);
+        }
+      });
+    }
+
     function addMsg(text, type) {
       const isEscalate = type === 'bot' && cfg.phone && text.includes(cfg.phone);
       const div = document.createElement('div');
@@ -425,7 +439,7 @@
       if (urlMatch) {
         const url = urlMatch[1];
         const label = /booking|reservation/i.test(url) ? 'Réserver maintenant' : 'En savoir plus';
-        linkifyPhones(text.replace(urlRegex, '').trim(), div);
+        renderBotText(text.replace(urlRegex, '').trim(), div);
         const btn = document.createElement('a');
         btn.href = url;
         btn.target = '_blank';
@@ -434,7 +448,7 @@
         btn.style.cssText = 'background:var(--cb-accent);color:#fff;border:none;border-radius:20px;padding:8px 16px;font-size:13px;cursor:pointer;margin-top:8px;display:inline-block;text-decoration:none;';
         div.appendChild(btn);
       } else if (type === 'bot') {
-        linkifyPhones(text, div);
+        renderBotText(text, div);
       } else {
         div.textContent = text;
       }

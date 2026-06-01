@@ -22,7 +22,7 @@ ChatbotSaaS.init({
   "errorMessage": "Je rencontre un problème. Contactez-nous au +33 6 63 77 06 91.",
   "ecommerce": true,
   "shopify": {
-    "storeUrl": "https://maison-bichonne.myshopify.com",
+    "storeUrl": "https://maisonbichonne.fr",
     "chemisier": {
       "orange-brique": { "S": 52876810125645, "M": 52876810158413, "L": 52876810191181, "XL": 52876810223949 },
       "framboise": { "S": 52876809994573, "M": 52876810027341, "L": 52876810060109, "XL": 52876810092877 },
