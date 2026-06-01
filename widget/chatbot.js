@@ -575,6 +575,8 @@
         links.push({ label: label.trim(), url });
         return '';
       }).trim();
+      if (links.length) console.log('[parseMarkdownLinks] found', links.length, 'link(s):', links);
+      else if (/https?:\/\//.test(text)) console.log('[parseMarkdownLinks] URL in text but no match — raw:', text);
       return { clean, links };
     }
 
@@ -651,6 +653,7 @@
       isTyping = true; sendBtn.disabled = true; showTyping();
       try {
         const { text: reply, showForm, shopifyTags, markdownLinks } = await callClaude(text);
+        console.log('[sendMsg] reply:', reply, '| shopifyTags:', shopifyTags, '| markdownLinks:', markdownLinks);
         removeTyping(); addMsg(reply, 'bot');
         renderShopifyTags(shopifyTags);
         renderMarkdownLinks(markdownLinks);
@@ -671,6 +674,7 @@
       isTyping = true; sendBtn.disabled = true; showTyping();
       try {
         const { text: reply, showForm, shopifyTags, markdownLinks } = await callClaude(text);
+        console.log('[sendMsg] reply:', reply, '| shopifyTags:', shopifyTags, '| markdownLinks:', markdownLinks);
         removeTyping(); addMsg(reply, 'bot');
         renderShopifyTags(shopifyTags);
         renderMarkdownLinks(markdownLinks);
@@ -872,13 +876,14 @@ Dès le premier message du visiteur, détecte sa langue et réponds dans cette m
 ## CE QUE TU SAIS
 ${cfg.faq || ''}
 
+NE DIS JAMAIS : "Parfait !", "Excellent !", "Excellent choix !", "Merveilleux !", "Super !", "Très bon choix !", "C'est noté !", "Bien sûr !", "Absolument !", "Avec plaisir !". Commence chaque réponse directement par l'information, sans validation.
+
 ## TON ET STYLE
 - Vouvoiement systématique
 - Ton chaleureux, bienveillant et professionnel — adapté à une boutique pour mamans
 - Jamais de listes à puces dans tes réponses
 - 2 à 3 phrases maximum, toujours
 - Une seule question par message, maximum
-- INTERDIT : "Parfait !", "Excellent !", "Excellent choix !", "Merveilleux !", "Super !", "Très bon choix !", "C'est noté !", "Bien sûr !", "Absolument !" — aucune expression de validation enthousiaste
 
 ## ESCALADE
 Si la question dépasse tes informations, invite le visiteur à contacter la boutique directement via le site.
