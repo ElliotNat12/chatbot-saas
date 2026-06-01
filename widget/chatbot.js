@@ -482,7 +482,7 @@
             const btn = document.createElement('button');
             btn.className = 'cb-color-btn';
             btn.textContent = label;
-            btn.onclick = () => sendMsg(label);
+            btn.onclick = () => { wrap.remove(); sendMsg(label); };
             wrap.appendChild(btn);
           });
         } else if (tag.type === 'tailles') {
@@ -490,7 +490,7 @@
             const btn = document.createElement('button');
             btn.className = 'cb-size-btn';
             btn.textContent = size;
-            btn.onclick = () => sendMsg(size);
+            btn.onclick = () => { wrap.remove(); sendMsg(size); };
             wrap.appendChild(btn);
           });
         } else if (tag.type === 'panier' && storeUrl) {
@@ -595,6 +595,7 @@
     }
 
     function parseMarkdownLinks(text) {
+      console.log('[parseMarkdownLinks] input:', text.substring(0, 300));
       const links = [];
       const clean = text.replace(/\[([^\]]+)\]\((https?:\/\/[^)]+)\)/g, (_, label, url) => {
         links.push({ label: label.trim(), url });
@@ -679,7 +680,8 @@
       try {
         const { text: reply, showForm, shopifyTags, markdownLinks } = await callClaude(text);
         console.log('[sendMsg] reply:', reply, '| shopifyTags:', shopifyTags, '| markdownLinks:', markdownLinks);
-        removeTyping(); addMsg(reply, 'bot');
+        removeTyping();
+        if (reply) addMsg(reply, 'bot');
         renderShopifyTags(shopifyTags);
         renderMarkdownLinks(markdownLinks);
         if (showForm) showLeadForm();
@@ -699,8 +701,9 @@
       isTyping = true; sendBtn.disabled = true; showTyping();
       try {
         const { text: reply, showForm, shopifyTags, markdownLinks } = await callClaude(text);
-        console.log('[sendMsg] reply:', reply, '| shopifyTags:', shopifyTags, '| markdownLinks:', markdownLinks);
-        removeTyping(); addMsg(reply, 'bot');
+        console.log('[sendSilentMsg] reply:', reply, '| shopifyTags:', shopifyTags, '| markdownLinks:', markdownLinks);
+        removeTyping();
+        if (reply) addMsg(reply, 'bot');
         renderShopifyTags(shopifyTags);
         renderMarkdownLinks(markdownLinks);
         if (showForm) showLeadForm();
@@ -877,11 +880,11 @@
         if (lang === 'en') {
           inputEl.placeholder = 'Your message...';
           if (cfg.suggestionsEn?.length) showSuggestions(cfg.suggestionsEn); else clearSuggestions();
-          if (greeted) sendSilentMsg('Please continue in English for the rest of our conversation.');
+          if (greeted) history.push({ role: 'user', content: 'Please respond in English from now on.' });
         } else {
           inputEl.placeholder = 'Votre message...';
           if (cfg.suggestions?.length) showSuggestions(cfg.suggestions); else clearSuggestions();
-          if (greeted) sendSilentMsg('Continuez en français pour la suite de notre échange.');
+          if (greeted) history.push({ role: 'user', content: 'Continuez en français pour la suite de notre échange.' });
         }
       });
     });
