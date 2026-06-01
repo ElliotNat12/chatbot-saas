@@ -224,6 +224,12 @@
       font-weight: 500; cursor: pointer; transition: opacity .15s;
     }
     .cb-lead-form button[type="submit"]:hover { opacity: .88; }
+    .cb-shop-btns { display: flex; flex-wrap: wrap; gap: 6px; padding: 4px 0 2px; align-self: flex-start; max-width: 92%; animation: cb-pop .18s ease; }
+    .cb-color-btn, .cb-size-btn { border: 1.5px solid #e2e8f0; background: #fff; color: #1a1a1a; border-radius: 20px; padding: 7px 14px; font-size: 13px; font-family: var(--cb-font); cursor: pointer; transition: background .15s, border-color .15s, color .15s; }
+    .cb-size-btn { border-radius: 8px; font-weight: 500; min-width: 44px; text-align: center; }
+    .cb-color-btn:hover, .cb-size-btn:hover { border-color: var(--cb-accent); color: var(--cb-accent); background: var(--cb-accent-light); }
+    .cb-cart-btn { display: inline-block; background: #1a1a1a; color: #fff !important; border-radius: 8px; padding: 12px 24px; font-size: 13.5px; font-weight: 600; font-family: var(--cb-font); text-decoration: none; cursor: pointer; transition: opacity .15s; animation: cb-pop .18s ease; }
+    .cb-cart-btn:hover { opacity: .85; }
     @media (max-width: 480px) {
       #cb-window {
         position: fixed; top: 0; left: 0; right: 0; bottom: 0;
@@ -260,6 +266,8 @@
       .cb-lead-form { background: #2a2a3e; }
       .cb-lead-form input { background: #1e1e2e; border-color: #3a3a5c; color: #e2e8f0; }
       .cb-lead-form label { color: #94a3b8; }
+      .cb-color-btn, .cb-size-btn { background: #2a2a3e; border-color: #4a4a6a; color: #e2e8f0; }
+      .cb-color-btn:hover, .cb-size-btn:hover { background: var(--cb-accent-light); border-color: var(--cb-accent); color: var(--cb-accent); }
       #cb-home-body { background: #1e1e2e; }
       #cb-home-avatar-wrap { border-color: #1e1e2e; }
       #cb-home-name { color: #e2e8f0; }
@@ -440,6 +448,46 @@
       time.scrollIntoView({ block: 'end' });
     }
 
+    function renderShopifyTags(tags) {
+      if (!tags || !tags.length) return;
+      const storeUrl = cfg.shopify && cfg.shopify.storeUrl ? cfg.shopify.storeUrl : '';
+      const colorLabels = ['Orange brique', 'Framboise', 'Vert émeraude', 'Noir'];
+      const sizes = ['S', 'M', 'L', 'XL'];
+      tags.forEach(tag => {
+        const wrap = document.createElement('div');
+        wrap.className = 'cb-shop-btns';
+        if (tag.type === 'couleurs') {
+          colorLabels.forEach(label => {
+            const btn = document.createElement('button');
+            btn.className = 'cb-color-btn';
+            btn.textContent = label;
+            btn.onclick = () => sendMsg(label);
+            wrap.appendChild(btn);
+          });
+        } else if (tag.type === 'tailles') {
+          sizes.forEach(size => {
+            const btn = document.createElement('button');
+            btn.className = 'cb-size-btn';
+            btn.textContent = size;
+            btn.onclick = () => sendMsg(size);
+            wrap.appendChild(btn);
+          });
+        } else if (tag.type === 'panier' && storeUrl) {
+          const a = document.createElement('a');
+          a.className = 'cb-cart-btn';
+          a.href = storeUrl + '/cart/' + tag.id + ':1';
+          a.target = '_blank';
+          a.rel = 'noopener noreferrer';
+          a.textContent = tag.label;
+          wrap.appendChild(a);
+        }
+        if (wrap.children.length) {
+          messages.appendChild(wrap);
+          messages.scrollTop = messages.scrollHeight;
+        }
+      });
+    }
+
     function showTyping() {
       const d = document.createElement('div');
       d.className = 'cb-typing'; d.id = 'cb-typing';
@@ -479,6 +527,15 @@
         clean = clean.replace(match[0], '').trim();
       }
       return { clean, leadData, showForm };
+    }
+
+    function parseShopifyTags(text) {
+      let clean = text;
+      const tags = [];
+      clean = clean.replace(/\[COULEURS\]/g, () => { tags.push({ type: 'couleurs' }); return ''; });
+      clean = clean.replace(/\[TAILLES:([^\]]+)\]/g, (_, coloris) => { tags.push({ type: 'tailles', coloris: coloris.trim() }); return ''; });
+      clean = clean.replace(/\[PANIER:(\d+):([^\]]+)\]/g, (_, id, label) => { tags.push({ type: 'panier', id, label: label.trim() }); return ''; });
+      return { clean: clean.trim(), tags };
     }
 
     async function sendNotify(payload) {
@@ -521,7 +578,8 @@
       if (!res.ok) throw new Error('API error ' + res.status);
       const apiData = await res.json();
       const rawReply = apiData.content?.[0]?.text || '...';
-      const { clean, leadData, showForm } = parseNotify(rawReply);
+      const { clean: notifyClean, leadData, showForm } = parseNotify(rawReply);
+      const { clean, tags: shopifyTags } = parseShopifyTags(notifyClean);
       if (leadData && !notifySent) {
         Object.assign(lead, leadData);
         const resume = history.filter(m => m.role === 'user').map(m => m.content).join(' | ');
@@ -541,7 +599,7 @@
 
       history.push({ role: 'assistant', content: clean });
       if (history.length >= 20) sendLog();
-      return { text: clean, showForm };
+      return { text: clean, showForm, shopifyTags };
     }
 
     async function sendMsg(text) {
@@ -551,8 +609,9 @@
       inputEl.value = ''; inputEl.style.height = 'auto';
       isTyping = true; sendBtn.disabled = true; showTyping();
       try {
-        const { text: reply, showForm } = await callClaude(text);
+        const { text: reply, showForm, shopifyTags } = await callClaude(text);
         removeTyping(); addMsg(reply, 'bot');
+        renderShopifyTags(shopifyTags);
         if (showForm) showLeadForm();
       } catch (e) {
         removeTyping();
@@ -569,8 +628,9 @@
       if (isTyping) return;
       isTyping = true; sendBtn.disabled = true; showTyping();
       try {
-        const { text: reply, showForm } = await callClaude(text);
+        const { text: reply, showForm, shopifyTags } = await callClaude(text);
         removeTyping(); addMsg(reply, 'bot');
+        renderShopifyTags(shopifyTags);
         if (showForm) showLeadForm();
       } catch (_) {
         removeTyping();
