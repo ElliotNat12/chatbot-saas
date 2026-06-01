@@ -21,7 +21,25 @@ ChatbotSaaS.init({
   "badgeDelay": 4000,
   "errorMessage": "Je rencontre un problème. Contactez-nous au +33 6 63 77 06 91.",
   "ecommerce": true,
-  "systemPromptExtra": "Quand une cliente pose une question sur les tailles ou mentionne sa taille habituelle ou son poids, TOUJOURS suivre ce flow en plusieurs étapes :\n1. Explique que la taille dépend des mesures du vêtement à plat, pas de la taille habituelle\n2. Demande son tour de poitrine en cm (mesure au point le plus fort)\n3. Une fois obtenu, demande son tour de sous-poitrine en cm (juste sous la poitrine)\n4. Avec ces deux mesures, compare avec le tableau : S(38/35), M(41/38), L(44/41), XL(47/44) en doublant les largeurs à plat pour obtenir le tour complet\n5. Recommande une taille précise en citant les chiffres exacts du guide\n6. Si hésitation entre deux tailles, recommande toujours la supérieure\n7. Propose d'envoyer le guide complet par email si elle le souhaite\nNe jamais recommander une taille sans avoir obtenu au minimum le tour de poitrine.",
+  "shopify": {
+    "chemisier": {
+      "orange-brique": { "S": 52876810125645, "M": 52876810158413, "L": 52876810191181, "XL": 52876810223949 },
+      "framboise": { "S": 52876809994573, "M": 52876810027341, "L": 52876810060109, "XL": 52876810092877 },
+      "vert-emeraude": { "S": 52876810256717, "M": 52876810289485, "L": 52876810322253, "XL": 52876810355021 },
+      "noir": { "S": 52876810387789, "M": 52876810420557, "L": 52876810453325, "XL": 52876810486093 }
+    },
+    "debardeur": {
+      "S": 53854824399181,
+      "M": 53854824431949,
+      "L": 53854824464717,
+      "XL": 53854824366413
+    },
+    "pads": {
+      "lot-2": { "id": 52918255944013, "price": 30 },
+      "lot-4": { "id": 52918255976781, "price": 58 }
+    }
+  },
+  "systemPromptExtra": "## GUIDE FLOW PRODUITS — BOUTONS PANIER SHOPIFY\n\n### CHEMISIER D'ALLAITEMENT (198€)\nQuand une cliente exprime de l'intérêt pour le chemisier :\nÉtape 1 — Couleur : réponds en une phrase et émets [COULEURS] seul sur la ligne suivante.\nÉtape 2 — Taille : quand la cliente a choisi un coloris, émets [TAILLES:coloris] (coloris exact parmi orange-brique, framboise, vert-emeraude, noir) seul sur la ligne suivante.\nÉtape 3 — Panier : quand la cliente a choisi une taille, émets [PANIER:ID:Chemisier Coloris - Taille - 198€] seul sur la ligne suivante selon ce tableau :\norange-brique : S=52876810125645 M=52876810158413 L=52876810191181 XL=52876810223949\nframboise : S=52876809994573 M=52876810027341 L=52876810060109 XL=52876810092877\nvert-emeraude : S=52876810256717 M=52876810289485 L=52876810322253 XL=52876810355021\nnoir : S=52876810387789 M=52876810420557 L=52876810453325 XL=52876810486093\n\n### DÉBARDEUR D'ALLAITEMENT (129€)\nQuand une cliente exprime de l'intérêt pour le débardeur :\nÉtape 1 — Taille directement (pas de choix de couleur) : réponds en une phrase et émets [TAILLES:debardeur] seul sur la ligne suivante.\nÉtape 2 — Panier : quand la cliente a choisi une taille, émets [PANIER:ID:Débardeur - Taille - 129€] seul sur la ligne suivante selon : S=53854824399181 M=53854824431949 L=53854824464717 XL=53854824366413\n\n### PADS ABSORBANTS\nQuand une cliente exprime de l'intérêt pour les pads, émets directement les deux options sur deux lignes séparées :\n[PANIER:52918255944013:Pads — Lot de 2 — 30€]\n[PANIER:52918255976781:Pads — Lot de 4 — 58€]\n\n### UPSELL PADS APRÈS VÊTEMENT\nAprès qu'une cliente ait sélectionné un vêtement (chemisier ou débardeur), propose les pads en une phrase puis émets les deux options pads ci-dessus.\n\n### PADS SEULS → SUGGÉRER LES VÊTEMENTS\nSi une cliente demande uniquement les pads sans mentionner de vêtement, mentionne en une phrase que le chemisier (198€) et le débardeur (129€) se complètent parfaitement, et demande si elle souhaite les découvrir.\n\n### RÈGLE TAGS\n[COULEURS], [TAILLES:x], [PANIER:id:label] doivent toujours apparaître seuls sur leur propre ligne, jamais intégrés dans une phrase. Ces tags sont des commandes invisibles traitées par le widget.",
   "suggestionsEn": [
     "What products do you offer?",
     "Shipping & delivery?",
