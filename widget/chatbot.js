@@ -355,6 +355,11 @@
     container.setAttribute('data-chatbot-saas', '');
     container.innerHTML = buildHTML(cfg);
     document.body.appendChild(container);
+    if (window.location.hostname === 'maisonbichonne.fr') {
+      const leftStyle = document.createElement('style');
+      leftStyle.textContent = '#cb-launcher{right:auto;left:24px}#cb-window{right:auto;left:24px}#cb-launcher-badge{right:auto;left:96px}@media(max-width:480px){#cb-launcher{right:auto;left:16px}#cb-launcher-badge{right:auto;left:88px}}';
+      document.head.appendChild(leftStyle);
+    }
 
     const launcher       = document.getElementById('cb-launcher');
     const launcherBadge  = document.getElementById('cb-launcher-badge');
@@ -487,12 +492,13 @@
             wrap.appendChild(btn);
           });
         } else if (tag.type === 'panier' && storeUrl) {
+          const fallbackUrl = storeUrl + '/cart/' + tag.id + ':1';
           const a = document.createElement('a');
           a.className = 'cb-cart-btn';
-          a.href = storeUrl + '/cart/' + tag.id + ':1';
-          a.target = '_blank';
+          a.href = fallbackUrl;
           a.rel = 'noopener noreferrer';
           a.textContent = tag.label;
+          a.addEventListener('click', (e) => { e.preventDefault(); addToCart(tag.id, fallbackUrl); });
           wrap.appendChild(a);
         }
         if (wrap.children.length) {
@@ -505,18 +511,35 @@
     function renderMarkdownLinks(links) {
       if (!links || !links.length) return;
       links.forEach(({ label, url }) => {
+        const match = url.match(/\/cart\/(\d+):/);
+        const variantId = match ? match[1] : null;
         const wrap = document.createElement('div');
         wrap.className = 'cb-shop-btns';
         const a = document.createElement('a');
         a.className = 'cb-cart-btn';
         a.href = url;
-        a.target = '_blank';
         a.rel = 'noopener noreferrer';
         a.textContent = label;
+        a.addEventListener('click', (e) => { e.preventDefault(); addToCart(variantId, url); });
         wrap.appendChild(a);
         messages.appendChild(wrap);
         messages.scrollTop = messages.scrollHeight;
       });
+    }
+
+    function addToCart(variantId, fallbackUrl) {
+      if ((window.__frameship || window.FrameShip) && variantId) {
+        fetch('/cart/add.js', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id: Number(variantId), quantity: 1 })
+        }).then(() => {
+          const cartBtn = document.querySelector('[data-cart-trigger], [data-open-cart], .cart-icon-bubble');
+          if (cartBtn) cartBtn.click();
+        }).catch(() => window.open(fallbackUrl, '_blank'));
+      } else {
+        window.open(fallbackUrl, '_blank');
+      }
     }
 
     function showTyping() {
