@@ -355,7 +355,7 @@
     container.setAttribute('data-chatbot-saas', '');
     container.innerHTML = buildHTML(cfg);
     document.body.appendChild(container);
-    if (window.location.hostname === 'maisonbichonne.fr') {
+    if (window.location.hostname.includes('maisonbichonne')) {
       const leftStyle = document.createElement('style');
       leftStyle.textContent = '#cb-launcher{right:auto;left:24px}#cb-window{right:auto;left:24px}#cb-launcher-badge{right:auto;left:96px}@media(max-width:480px){#cb-launcher{right:auto;left:16px}#cb-launcher-badge{right:auto;left:88px}}';
       document.head.appendChild(leftStyle);
