@@ -488,6 +488,23 @@
       });
     }
 
+    function renderMarkdownLinks(links) {
+      if (!links || !links.length) return;
+      links.forEach(({ label, url }) => {
+        const wrap = document.createElement('div');
+        wrap.className = 'cb-shop-btns';
+        const a = document.createElement('a');
+        a.className = 'cb-cart-btn';
+        a.href = url;
+        a.target = '_blank';
+        a.rel = 'noopener noreferrer';
+        a.textContent = label;
+        wrap.appendChild(a);
+        messages.appendChild(wrap);
+        messages.scrollTop = messages.scrollHeight;
+      });
+    }
+
     function showTyping() {
       const d = document.createElement('div');
       d.className = 'cb-typing'; d.id = 'cb-typing';
@@ -534,8 +551,17 @@
       const tags = [];
       clean = clean.replace(/\[COULEURS\]/g, () => { tags.push({ type: 'couleurs' }); return ''; });
       clean = clean.replace(/\[TAILLES:([^\]]+)\]/g, (_, coloris) => { tags.push({ type: 'tailles', coloris: coloris.trim() }); return ''; });
-      clean = clean.replace(/\[PANIER:(\d+):([^\]]+)\]/g, (_, id, label) => { tags.push({ type: 'panier', id, label: label.trim() }); return ''; });
+      clean = clean.replace(/\[PANIER:(\d+):([^\]]+)\](?:\([^)]*\))?/g, (_, id, label) => { tags.push({ type: 'panier', id, label: label.trim() }); return ''; });
       return { clean: clean.trim(), tags };
+    }
+
+    function parseMarkdownLinks(text) {
+      const links = [];
+      const clean = text.replace(/\[([^\]]+)\]\((https?:\/\/[^)]+)\)/g, (_, label, url) => {
+        links.push({ label: label.trim(), url });
+        return '';
+      }).trim();
+      return { clean, links };
     }
 
     async function sendNotify(payload) {
@@ -579,7 +605,8 @@
       const apiData = await res.json();
       const rawReply = apiData.content?.[0]?.text || '...';
       const { clean: notifyClean, leadData, showForm } = parseNotify(rawReply);
-      const { clean, tags: shopifyTags } = parseShopifyTags(notifyClean);
+      const { clean: shopifyClean, tags: shopifyTags } = parseShopifyTags(notifyClean);
+      const { clean, links: markdownLinks } = parseMarkdownLinks(shopifyClean);
       if (leadData && !notifySent) {
         Object.assign(lead, leadData);
         const resume = history.filter(m => m.role === 'user').map(m => m.content).join(' | ');
@@ -599,7 +626,7 @@
 
       history.push({ role: 'assistant', content: clean });
       if (history.length >= 20) sendLog();
-      return { text: clean, showForm, shopifyTags };
+      return { text: clean, showForm, shopifyTags, markdownLinks };
     }
 
     async function sendMsg(text) {
@@ -609,9 +636,10 @@
       inputEl.value = ''; inputEl.style.height = 'auto';
       isTyping = true; sendBtn.disabled = true; showTyping();
       try {
-        const { text: reply, showForm, shopifyTags } = await callClaude(text);
+        const { text: reply, showForm, shopifyTags, markdownLinks } = await callClaude(text);
         removeTyping(); addMsg(reply, 'bot');
         renderShopifyTags(shopifyTags);
+        renderMarkdownLinks(markdownLinks);
         if (showForm) showLeadForm();
       } catch (e) {
         removeTyping();
@@ -628,9 +656,10 @@
       if (isTyping) return;
       isTyping = true; sendBtn.disabled = true; showTyping();
       try {
-        const { text: reply, showForm, shopifyTags } = await callClaude(text);
+        const { text: reply, showForm, shopifyTags, markdownLinks } = await callClaude(text);
         removeTyping(); addMsg(reply, 'bot');
         renderShopifyTags(shopifyTags);
+        renderMarkdownLinks(markdownLinks);
         if (showForm) showLeadForm();
       } catch (_) {
         removeTyping();
@@ -833,9 +862,9 @@ ${cfg.faq || ''}
 - Vouvoiement systématique
 - Ton chaleureux, bienveillant et professionnel — adapté à une boutique pour mamans
 - Jamais de listes à puces dans tes réponses
-- Jamais de texte en gras (pas de **)
 - 2 à 3 phrases maximum, toujours
 - Une seule question par message, maximum
+- INTERDIT : "Parfait !", "Excellent !", "Excellent choix !", "Merveilleux !", "Super !", "Très bon choix !", "C'est noté !", "Bien sûr !", "Absolument !" — aucune expression de validation enthousiaste
 
 ## ESCALADE
 Si la question dépasse tes informations, invite le visiteur à contacter la boutique directement via le site.
