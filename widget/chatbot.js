@@ -228,8 +228,9 @@
     .cb-color-btn, .cb-size-btn { border: 1.5px solid #e2e8f0; background: #fff; color: #1a1a1a; border-radius: 20px; padding: 7px 14px; font-size: 13px; font-family: var(--cb-font); cursor: pointer; transition: background .15s, border-color .15s, color .15s; }
     .cb-size-btn { border-radius: 8px; font-weight: 500; min-width: 44px; text-align: center; }
     .cb-color-btn:hover, .cb-size-btn:hover { border-color: var(--cb-accent); color: var(--cb-accent); background: var(--cb-accent-light); }
-    .cb-cart-btn { display: inline-block; background: #1a1a1a; color: #fff !important; border-radius: 8px; padding: 12px 24px; font-size: 13.5px; font-weight: 600; font-family: var(--cb-font); text-decoration: none; cursor: pointer; transition: opacity .15s; animation: cb-pop .18s ease; }
+    .cb-cart-btn { display: inline-flex; flex-direction: column; background: #1a1a1a; color: #fff !important; border-radius: 8px; padding: 10px 20px; font-size: 13.5px; font-weight: 600; font-family: var(--cb-font); text-decoration: none; cursor: pointer; transition: opacity .15s; animation: cb-pop .18s ease; }
     .cb-cart-btn:hover { opacity: .85; }
+    .cb-cart-label { font-size: 11px; font-weight: 400; opacity: .7; margin-bottom: 3px; }
     @media (max-width: 480px) {
       #cb-window {
         position: fixed; top: 0; left: 0; right: 0; bottom: 0;
@@ -501,8 +502,16 @@
           const a = document.createElement('a');
           a.className = 'cb-cart-btn';
           a.href = fallbackUrl;
+          a.target = '_blank';
           a.rel = 'noopener noreferrer';
-          a.textContent = tag.label;
+          // INTENTION : Affiche le descriptif produit en petit au-dessus du CTA principal
+          const labelEl = document.createElement('span');
+          labelEl.className = 'cb-cart-label';
+          labelEl.textContent = tag.label;
+          const ctaEl = document.createElement('span');
+          ctaEl.textContent = currentLang === 'en' ? 'Add to cart →' : 'Ajouter au panier →';
+          a.appendChild(labelEl);
+          a.appendChild(ctaEl);
           a.addEventListener('click', (e) => { e.preventDefault(); addToCart(tag.id, fallbackUrl); }, { once: true });
           wrap.appendChild(a);
         }
