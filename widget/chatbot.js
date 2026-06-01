@@ -850,12 +850,30 @@
       }
     }, { passive: false });
 
+    function updateHomeScreen(lang) {
+      const subtitle = document.getElementById('cb-home-subtitle');
+      if (subtitle) subtitle.textContent = lang === 'en'
+        ? (cfg.welcomeMessageEn || 'Hello! How can I help you today?')
+        : (cfg.homeSubtitle || 'Bonjour ! Comment puis-je vous aider ?');
+      if (homeStartBtn) homeStartBtn.textContent = lang === 'en' ? 'Start →' : 'Démarrer →';
+      homeChipsEl.innerHTML = '';
+      const chips = lang === 'en' ? (cfg.suggestionsEn || []) : (cfg.suggestions || []);
+      chips.slice(0, 3).forEach(text => {
+        const btn = document.createElement('button');
+        btn.className = 'cb-home-chip';
+        btn.textContent = text;
+        btn.addEventListener('click', () => { transitionToChat(() => { greeted = true; sendMsg(text); }); });
+        homeChipsEl.appendChild(btn);
+      });
+    }
+
     document.querySelectorAll('.cb-lang-btn').forEach(btn => {
       btn.addEventListener('click', () => {
         document.querySelectorAll('.cb-lang-btn').forEach(b => b.classList.remove('active'));
         btn.classList.add('active');
         const lang = btn.dataset.lang;
         currentLang = lang;
+        if (!greeted) updateHomeScreen(lang);
         if (lang === 'en') {
           inputEl.placeholder = 'Your message...';
           if (cfg.suggestionsEn?.length) showSuggestions(cfg.suggestionsEn); else clearSuggestions();
