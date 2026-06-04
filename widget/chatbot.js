@@ -475,7 +475,10 @@
         ? ['Terracotta', 'Raspberry', 'Emerald green', 'Black']
         : ['Orange brique', 'Framboise', 'Vert émeraude', 'Noir'];
       const sizes = ['S', 'M', 'L', 'XL'];
-      tags.forEach(tag => {
+      // INTENTION : Si la réponse contient couleurs ET tailles en même temps, on ignore couleurs — tailles prend le dessus
+      const hasTailles = tags.some(t => t.type === 'tailles');
+      const activeTags = hasTailles ? tags.filter(t => t.type !== 'couleurs') : tags;
+      activeTags.forEach(tag => {
         if (tag.type === 'couleurs') {
           messages.querySelectorAll('.cb-shop-btns').forEach(el => el.remove());
         }
