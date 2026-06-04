@@ -228,7 +228,7 @@
     .cb-color-btn, .cb-size-btn { border: 1.5px solid #e2e8f0; background: #fff; color: #1a1a1a; border-radius: 20px; padding: 7px 14px; font-size: 13px; font-family: var(--cb-font); cursor: pointer; transition: background .15s, border-color .15s, color .15s; }
     .cb-size-btn { border-radius: 8px; font-weight: 500; min-width: 44px; text-align: center; }
     .cb-color-btn:hover, .cb-size-btn:hover { border-color: var(--cb-accent); color: var(--cb-accent); background: var(--cb-accent-light); }
-    .cb-cart-btn { display: inline-flex; flex-direction: column; background: #7a3d3d; color: #fff !important; border-radius: 8px; padding: 10px 20px; font-size: 13.5px; font-weight: 600; font-family: var(--cb-font); text-decoration: none; cursor: pointer; transition: opacity .15s; animation: cb-pop .18s ease; }
+    .cb-cart-btn { display: inline-flex; flex-direction: column; background: #1a1a1a; color: #fff !important; border-radius: 8px; padding: 10px 20px; font-size: 13.5px; font-weight: 600; font-family: var(--cb-font); text-decoration: none; cursor: pointer; transition: opacity .15s; animation: cb-pop .18s ease; }
     .cb-cart-btn:hover { opacity: .85; }
     .cb-cart-label { display: block; font-size: 11px; font-weight: 400; opacity: .7; margin-bottom: 3px; }
     @media (max-width: 480px) {
@@ -948,7 +948,7 @@ Dès le premier message du visiteur, détecte sa langue et réponds dans cette m
 ## CE QUE TU SAIS
 ${cfg.faq || ''}
 
-NE DIS JAMAIS : "Parfait !", "Excellent !", "Excellent choix !", "Merveilleux !", "Super !", "Très bon choix !", "C'est noté !", "Bien sûr !", "Absolument !", "Avec plaisir !", "Perfect choice!", "Great choice!", "Wonderful choice!". Commence chaque réponse directement par l'information, sans validation.
+NE DIS JAMAIS : "Parfait !", "Excellent !", "Excellent choix !", "Merveilleux !", "Super !", "Très bon choix !", "C'est noté !", "Bien sûr !", "Absolument !", "Avec plaisir !", "Perfect choice!", "Great choice!", "Wonderful choice!", "Wonderful!". Commence chaque réponse directement par l'information, sans validation.
 
 ## TON ET STYLE
 - Vouvoiement systématique
