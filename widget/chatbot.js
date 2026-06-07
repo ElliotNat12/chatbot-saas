@@ -518,17 +518,17 @@
           const a = document.createElement('a');
           a.className = 'cb-cart-btn';
           a.href = fallbackUrl;
-          a.target = '_blank';
           a.rel = 'noopener noreferrer';
-          // INTENTION : Affiche le descriptif produit en petit au-dessus du CTA principal
-          const labelEl = document.createElement('span');
-          labelEl.className = 'cb-cart-label';
-          labelEl.textContent = tag.label;
-          const ctaEl = document.createElement('span');
-          ctaEl.textContent = currentLang === 'en' ? 'Add to cart →' : 'Ajouter au panier →';
-          a.appendChild(labelEl);
-          a.appendChild(ctaEl);
-          a.addEventListener('click', (e) => { e.preventDefault(); addToCart(tag.id, fallbackUrl); }, { once: true });
+          // INTENTION : Affiche le nom + prix du produit en une seule ligne avec icône panier.
+          const originalLabel = '🛒 ' + tag.label;
+          a.textContent = originalLabel;
+          a.addEventListener('click', (e) => {
+            e.preventDefault();
+            addToCart(tag.id, fallbackUrl);
+            // INTENTION : Confirmation visuelle 1.5s après ajout au panier.
+            a.textContent = '✓ Ajouté';
+            setTimeout(() => { a.textContent = originalLabel; }, 1500);
+          });
           wrap.appendChild(a);
         }
         if (wrap.children.length) {
