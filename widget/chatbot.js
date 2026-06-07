@@ -231,6 +231,18 @@
     .cb-cart-btn { display: inline-flex; flex-direction: column; background: #1a1a1a; color: #fff !important; border-radius: 8px; padding: 10px 20px; font-size: 13.5px; font-weight: 600; font-family: var(--cb-font); text-decoration: none; cursor: pointer; transition: opacity .15s; animation: cb-pop .18s ease; }
     .cb-cart-btn:hover { opacity: .85; }
     .cb-cart-label { display: block; font-size: 11px; font-weight: 400; opacity: .7; margin-bottom: 3px; }
+    #cb-sticky-cart {
+      display: none; padding: 8px 14px;
+      border-top: 1px solid #f1f5f9; background: #fff; flex-shrink: 0;
+    }
+    #cb-sticky-cart a {
+      display: block; width: 100%; box-sizing: border-box;
+      background: #1a1a1a; color: #fff !important; text-align: center;
+      padding: 12px 16px; border-radius: 10px; font-size: 14px;
+      font-weight: 600; font-family: var(--cb-font); text-decoration: none;
+      transition: opacity .15s;
+    }
+    #cb-sticky-cart a:hover { opacity: .85; }
     @media (max-width: 480px) {
       #cb-window {
         position: fixed; top: 0; left: 0; right: 0; bottom: 0;
@@ -320,6 +332,7 @@
         </div>
         <div id="cb-messages"></div>
         <div id="cb-suggestions"></div>
+        <div id="cb-sticky-cart"></div>
         <div id="cb-input-area">
           <button class="cb-close-inline" id="cb-close-inline">✕ Fermer</button>
           <textarea id="cb-input" placeholder="${cfg.placeholder || 'Votre message...'}" rows="1"></textarea>
@@ -376,7 +389,7 @@
     const homeChipsEl    = document.getElementById('cb-home-chips');
     const homeStartBtn   = document.getElementById('cb-home-start');
 
-    let history = [], isOpen = false, isTyping = false, greeted = false, lead = {}, notifySent = false, formShown = false, currentLang = 'fr';
+    let history = [], cartItems = [], isOpen = false, isTyping = false, greeted = false, lead = {}, notifySent = false, formShown = false, currentLang = 'fr';
     let sessionStart = Date.now(), logSent = false;
 
     function detectLanguage() {
@@ -544,19 +557,44 @@
       });
     }
 
-    function addToCart(variantId, fallbackUrl) {
-      if ((window.__frameship || window.FrameShip) && variantId) {
-        fetch('/cart/add.js', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ id: Number(variantId), quantity: 1 })
-        }).then(() => {
-          const cartBtn = document.querySelector('[data-cart-trigger], [data-open-cart], .cart-icon-bubble');
-          if (cartBtn) cartBtn.click();
-        }).catch(() => window.open(fallbackUrl, '_blank'));
+    // INTENTION : Met à jour le bouton sticky panier avec le compte et l'URL cumulée.
+    function updateStickyCart() {
+      const stickyEl = document.getElementById('cb-sticky-cart');
+      if (!stickyEl) return;
+      if (cartItems.length === 0) { stickyEl.style.display = 'none'; return; }
+      const cartPath = cartItems.map(id => id + ':1').join(',');
+      const cartUrl = 'https://maison-bichonne.myshopify.com/cart/' + cartPath;
+      const label = cartItems.length === 1 ? 'Voir mon panier (1 article)' : 'Voir mon panier (' + cartItems.length + ' articles)';
+      stickyEl.innerHTML = '<a id="cb-sticky-cart-link" href="' + cartUrl + '">' + label + '</a>';
+      const link = document.getElementById('cb-sticky-cart-link');
+      if (window.location.hostname.includes('maisonbichonne')) {
+        // INTENTION : Sur le vrai site, tente l'API Shopify (Frameship) puis bascule sur nouvel onglet.
+        link.addEventListener('click', (e) => {
+          if (window.__frameship || window.FrameShip) {
+            e.preventDefault();
+            Promise.all(cartItems.map(id => fetch('/cart/add.js', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ id: Number(id), quantity: 1 })
+            }))).then(() => {
+              const cartBtn = document.querySelector('[data-cart-trigger], [data-open-cart], .cart-icon-bubble');
+              if (cartBtn) cartBtn.click();
+              else window.open(cartUrl, '_blank');
+            }).catch(() => window.open(cartUrl, '_blank'));
+          } else {
+            link.target = '_blank';
+          }
+        });
       } else {
-        window.open(fallbackUrl, '_blank');
+        link.target = '_blank';
       }
+      stickyEl.style.display = 'block';
+    }
+
+    // INTENTION : Ajoute l'article à l'accumulateur de panier sans redirection immédiate.
+    function addToCart(variantId, fallbackUrl) {
+      if (variantId && !cartItems.includes(variantId)) cartItems.push(variantId);
+      updateStickyCart();
     }
 
     function showTyping() {
@@ -926,7 +964,8 @@
       open: openChat,
       close: closeChat,
       reset: () => {
-        history = []; greeted = false; lead = {}; notifySent = false; formShown = false;
+        history = []; cartItems = []; greeted = false; lead = {}; notifySent = false; formShown = false;
+        updateStickyCart();
         homeEl.classList.remove('active', 'cb-exiting');
         messages.style.display = ''; suggestBox.style.display = ''; inputArea.style.display = '';
       }
