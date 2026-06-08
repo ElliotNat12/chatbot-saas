@@ -18,3 +18,6 @@ Tolérance : ± 1 cm. En cas d'hésitation entre deux tailles, prendre la taille
 
 ### Note technique
 Le débardeur intégré est près du corps avec élasticité modérée. En cas de doute, la taille supérieure est recommandée.
+
+### Coloris du débardeur d'allaitement (vendu séparément)
+Le débardeur d'allaitement (129€, produit séparé) est disponible **uniquement en noir**. Aucun autre coloris disponible.
