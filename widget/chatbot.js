@@ -700,18 +700,29 @@
         headers['anthropic-version'] = '2023-06-01';
         headers['anthropic-dangerous-direct-browser-access'] = 'true';
       }
-      const res = await fetch(url, {
-        method: 'POST',
-        headers,
-        body: JSON.stringify({
-          model: 'claude-haiku-4-5-20251001',
-          max_tokens: 400,
-          system: buildSystemPrompt(cfg, currentLang),
-          messages: history
-        })
+      const body = JSON.stringify({
+        model: 'claude-haiku-4-5-20251001',
+        max_tokens: 400,
+        system: buildSystemPrompt(cfg, currentLang),
+        messages: history
       });
-      if (res.status === 429) throw new Error('rate_limit');
-      if (!res.ok) throw new Error('API error ' + res.status);
+      // INTENTION : Tente l'appel API, puis réessaie une fois après 2s sur erreur réseau ou 5xx (cold start).
+      async function attempt() {
+        const r = await fetch(url, { method: 'POST', headers, body });
+        if (r.status === 429) throw new Error('rate_limit');
+        if (!r.ok) throw new Error('API error ' + r.status);
+        return r;
+      }
+      let res;
+      try {
+        res = await attempt();
+      } catch (e) {
+        // Retry uniquement sur erreur réseau ou erreur serveur (5xx) — pas sur 4xx ni rate limit.
+        const noRetry = e.message === 'rate_limit' || /^API error [^5]/.test(e.message);
+        if (noRetry) throw e;
+        await new Promise(r => setTimeout(r, 2000));
+        res = await attempt();
+      }
       const apiData = await res.json();
       const rawReply = apiData.content?.[0]?.text || '...';
       const { clean: notifyClean, leadData, showForm } = parseNotify(rawReply);
