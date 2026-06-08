@@ -519,8 +519,12 @@
           a.className = 'cb-cart-btn';
           a.href = fallbackUrl;
           a.rel = 'noopener noreferrer';
-          // INTENTION : Affiche le nom + prix du produit en une seule ligne avec icône panier.
-          const originalLabel = '🛒 ' + tag.label;
+          // INTENTION : Formate le bouton comme une action claire "Ajouter au panier — Produit Taille — Prix".
+          const parts = tag.label.split(' — ');
+          const compactLabel = parts.length >= 3
+            ? parts[0] + ' ' + parts[1] + ' — ' + parts.slice(2).join(' — ')
+            : tag.label;
+          const originalLabel = 'Ajouter au panier — ' + compactLabel;
           a.textContent = originalLabel;
           a.addEventListener('click', (e) => {
             e.preventDefault();
