@@ -657,11 +657,11 @@
       const storeUrl = cfg.shopify?.storeUrl || '';
       const clean = text
         .replace(/\[([^\]]+)\]\((https?:\/\/[^)]+)\)/g, (_, label, url) => {
-          links.push({ label: label.trim(), url });
+          if (!/voir mon panier|view my cart/i.test(label)) links.push({ label: label.trim(), url });
           return '';
         })
         .replace(/\[([^\]]+)\]\((\/cart\/[^)]+)\)/g, (_, label, path) => {
-          links.push({ label: label.trim(), url: storeUrl + path });
+          if (!/voir mon panier|view my cart/i.test(label)) links.push({ label: label.trim(), url: storeUrl + path });
           return '';
         })
         .replace(/https?:\/\/\S*\/cart\/\d+[^)\s]*/g, (url) => {
