@@ -502,7 +502,7 @@
             const btn = document.createElement('button');
             btn.className = 'cb-color-btn';
             btn.textContent = label;
-            btn.addEventListener('click', () => { wrap.remove(); sendMsg(label); }, { once: true });
+            btn.addEventListener('click', () => { btn.disabled = true; wrap.remove(); sendMsg(label); }, { once: true });
             wrap.appendChild(btn);
           });
         } else if (tag.type === 'tailles') {
@@ -510,7 +510,7 @@
             const btn = document.createElement('button');
             btn.className = 'cb-size-btn';
             btn.textContent = size;
-            btn.addEventListener('click', () => { wrap.remove(); sendMsg(size); }, { once: true });
+            btn.addEventListener('click', () => { btn.disabled = true; wrap.remove(); sendMsg(size); }, { once: true });
             wrap.appendChild(btn);
           });
         } else if (tag.type === 'panier' && storeUrl) {
@@ -760,6 +760,8 @@
         const { text: reply, showForm, shopifyTags, markdownLinks } = await callClaude(text);
         console.log('[sendMsg] reply:', reply, '| shopifyTags:', shopifyTags, '| markdownLinks:', markdownLinks);
         removeTyping();
+        // INTENTION : 'reply' = clean text après parseNotify→parseShopifyTags→parseMarkdownLinks. Vérifier ici si les liens sont bien strippés.
+        console.log('[addMsg] text passed to render:', JSON.stringify(reply));
         if (reply) addMsg(reply, 'bot');
         renderShopifyTags(shopifyTags);
         renderMarkdownLinks(markdownLinks);
@@ -782,6 +784,7 @@
         const { text: reply, showForm, shopifyTags, markdownLinks } = await callClaude(text);
         console.log('[sendSilentMsg] reply:', reply, '| shopifyTags:', shopifyTags, '| markdownLinks:', markdownLinks);
         removeTyping();
+        console.log('[addMsg] text passed to render:', JSON.stringify(reply));
         if (reply) addMsg(reply, 'bot');
         renderShopifyTags(shopifyTags);
         renderMarkdownLinks(markdownLinks);
