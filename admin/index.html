@@ -494,6 +494,7 @@
       </select>
       <span id="tester-loading" style="font-size:12px;color:var(--muted);display:none"><span class="spinner spinner-dark"></span> Chargement…</span>
       <button class="btn btn-secondary" id="q-btn" onclick="openQModal()" style="display:none;white-space:nowrap">📋 Questionnaire client</button>
+      <button class="btn btn-secondary" id="invite-btn" onclick="sendInvite(S.testerSlug)" style="display:none;white-space:nowrap">🔗 Lien d'activation</button>
     </div>
 
     <div id="tester-content" style="display:none">
@@ -1213,6 +1214,8 @@ async function onClientSelect(slug) {
   document.getElementById('tester-empty').style.display = slug ? 'none' : 'block';
   const qBtn = document.getElementById('q-btn');
   if (qBtn) qBtn.style.display = slug ? 'inline-block' : 'none';
+  const inviteBtn = document.getElementById('invite-btn');
+  if (inviteBtn) inviteBtn.style.display = slug ? 'inline-block' : 'none';
   if (!slug) return;
   S.testerSlug = slug;
   document.getElementById('tester-loading').style.display = 'inline';
