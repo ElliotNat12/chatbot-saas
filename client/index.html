@@ -551,22 +551,30 @@ async function runPageSpeed() {
     var r = await fetch(apiUrl, { headers: { 'Authorization': 'Bearer ' + getToken() } });
     if (!r.ok) throw new Error('Erreur API PageSpeed (' + r.status + ')');
     var data = await r.json();
-    var cats = data.lighthouseResult && data.lighthouseResult.categories;
-    if (!cats) throw new Error("Réponse invalide de l'API PageSpeed");
-    function setScore(elId, score) {
-      var val = score != null ? Math.round(score * 100) : null;
-      var el  = document.getElementById(elId);
+    var lhr = data.lighthouseResult;
+    if (!lhr || !lhr.categories) throw new Error("Réponse invalide de l'API PageSpeed");
+    var cats = lhr.categories;
+    // INTENTION : Affiche un score 0-100 avec couleur verte/orange/rouge selon le seuil.
+    function setScore(elId, cat) {
+      var score = (cat != null && cat.score != null) ? cat.score : null;
+      var val   = score != null ? Math.round(score * 100) : null;
+      var el    = document.getElementById(elId);
       el.textContent = val != null ? val : '—';
-      el.className = 'seo-score-val ' + (val == null ? '' : val >= 90 ? 'score-green' : val >= 50 ? 'score-orange' : 'score-red');
+      el.className   = 'seo-score-val ' + (val == null ? '' : val >= 90 ? 'score-green' : val >= 50 ? 'score-orange' : 'score-red');
     }
-    setScore('seo-perf',   cats.performance   && cats.performance.score);
-    setScore('seo-access', cats.accessibility && cats.accessibility.score);
-    setScore('seo-seo',    cats.seo           && cats.seo.score);
-    setScore('seo-bp',     cats['best-practices'] && cats['best-practices'].score);
-    var audits = (data.lighthouseResult && data.lighthouseResult.audits) || {};
+    setScore('seo-perf',   cats.performance);
+    setScore('seo-access', cats.accessibility);
+    setScore('seo-seo',    cats.seo);
+    setScore('seo-bp',     cats['best-practices']);
+    // INTENTION : Récupère les 3 principales opportunités d'amélioration, triées par temps économisé.
+    var audits = lhr.audits || {};
     var opps = Object.values(audits)
       .filter(function(a) { return a.details && a.details.type === 'opportunity' && a.score != null && a.score < 1; })
-      .sort(function(a, b) { return ((b.details && b.details.overallSavingsMs) || 0) - ((a.details && a.details.overallSavingsMs) || 0); })
+      .sort(function(a, b) {
+        var savA = (a.details && a.details.overallSavingsMs) || a.numericValue || 0;
+        var savB = (b.details && b.details.overallSavingsMs) || b.numericValue || 0;
+        return savB - savA;
+      })
       .slice(0, 3);
     var recoList = document.getElementById('seo-reco-list');
     if (opps.length === 0) {
@@ -583,8 +591,8 @@ async function runPageSpeed() {
     }
     results.style.display = 'block';
   } catch(e) {
-    error.textContent    = e.message;
-    error.style.display  = 'block';
+    error.textContent   = e.message;
+    error.style.display = 'block';
   } finally {
     loading.style.display = 'none';
   }
