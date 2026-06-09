@@ -393,15 +393,16 @@ async function addToFaq(btn, question) {
 
 // ─── FAQ Editor ──────────────────────────────────────────────────────────────
 function parseFaq(text) {
-  var entries = [];
   var raw = text.trim();
-  if (!raw) return entries;
-  // Split on newline followed by "Q:" (handles both first block and subsequent)
+  if (!raw) return [];
+  // Texte libre : aucun marqueur Q: dans le contenu
+  if (!/(?:^|\n)Q:\s*/m.test(raw)) return [{ q: '', r: raw }];
+  // Format structuré Q:/R:
+  var entries = [];
   var blocks = raw.split(/\n(?=Q:\s*)/);
   for (var i = 0; i < blocks.length; i++) {
     var block = blocks[i].trim();
     if (!block) continue;
-    // Strip leading "Q:"
     var qBody = block.startsWith('Q:') ? block.slice(2) : block;
     var rIdx = qBody.search(/\nR:\s*/);
     var q, r;
@@ -434,7 +435,7 @@ function addFaqCard(question, answer) {
       '<span class="faq-num">#' + idx + '</span>' +
       '<button class="faq-del" onclick="this.closest(\'.faq-card\').remove();renumberFaq()" title="Supprimer">🗑</button>' +
     '</div>' +
-    '<input class="faq-q" type="text" placeholder="Question…">' +
+    '<input class="faq-q" type="text" placeholder="' + (question === '' ? 'Informations générales' : 'Question…') + '">' +
     '<textarea class="faq-r" placeholder="Réponse…"></textarea>';
   card.querySelector('.faq-q').value = question || '';
   card.querySelector('.faq-r').value = answer || '';
@@ -452,7 +453,9 @@ function buildFaqText() {
   document.getElementById('faq-editor').querySelectorAll('.faq-card').forEach(function(card) {
     var q = card.querySelector('.faq-q').value.trim();
     var r = card.querySelector('.faq-r').value.trim();
-    if (q || r) lines.push('Q: ' + q + '\nR: ' + r);
+    if (!q && !r) return;
+    // Question vide = texte libre, pas de marqueurs Q:/R:
+    lines.push(q ? 'Q: ' + q + '\nR: ' + r : r);
   });
   return lines.join('\n\n');
 }
