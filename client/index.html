@@ -554,6 +554,7 @@ async function runPageSpeed() {
     var lhr = data.lighthouseResult;
     if (!lhr || !lhr.categories) throw new Error("Réponse invalide de l'API PageSpeed");
     var cats = lhr.categories;
+    console.log('cats:', JSON.stringify(cats));
     // INTENTION : Affiche un score 0-100 avec couleur verte/orange/rouge selon le seuil.
     function setScore(elId, cat) {
       var score = (cat != null && cat.score != null) ? cat.score : null;
