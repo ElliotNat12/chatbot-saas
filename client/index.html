@@ -89,6 +89,33 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
 .faq-card .faq-r:focus{border-color:var(--accent)}
 .btn-add-entry{padding:7px 14px;background:transparent;border:1px dashed var(--accent);border-radius:8px;font-size:13px;font-weight:600;color:var(--accent);cursor:pointer;font-family:inherit;width:100%;transition:background .15s;margin-bottom:.5rem}
 .btn-add-entry:hover{background:var(--accent-lt)}
+
+/* ─── Dash tabs ─── */
+.dash-tabs{display:flex;gap:.25rem;margin-bottom:1.25rem;border-bottom:2px solid var(--border);padding-bottom:0}
+.dash-tab{background:none;border:none;padding:.6rem 1rem;font-size:14px;font-weight:600;color:var(--muted);cursor:pointer;font-family:inherit;border-bottom:2px solid transparent;margin-bottom:-2px;transition:color .15s,border-color .15s}
+.dash-tab:hover{color:var(--text)}
+.dash-tab.active{color:var(--accent);border-bottom-color:var(--accent)}
+.dash-tab-content{display:none}
+.dash-tab-content.active{display:block}
+
+/* ─── SEO ─── */
+.seo-scores{display:grid;grid-template-columns:repeat(2,1fr);gap:.875rem;margin-bottom:1.25rem}
+.seo-score-box{background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:1.25rem 1rem;text-align:center}
+.seo-score-val{font-size:2.25rem;font-weight:800;line-height:1;margin-bottom:.3rem}
+.seo-score-lbl{font-size:12px;color:var(--muted)}
+.score-green{color:#059669}
+.score-orange{color:#d97706}
+.score-red{color:#dc2626}
+.seo-url-row{display:flex;gap:.5rem;margin-bottom:1rem}
+.seo-url-row input{flex:1;border:1px solid #dde2e8;border-radius:8px;padding:9px 12px;font-size:14px;font-family:inherit;outline:none;transition:border-color .15s;background:#f9fafb}
+.seo-url-row input:focus{border-color:var(--accent);background:#fff}
+.seo-loading{text-align:center;padding:2rem 0;color:var(--muted);font-size:14px;display:flex;align-items:center;justify-content:center;gap:.5rem}
+.seo-error{font-size:13px;color:#dc2626;background:#fef2f2;border:1px solid #fecaca;border-radius:8px;padding:.75rem 1rem;margin-top:.75rem}
+.seo-reco-list{display:flex;flex-direction:column;gap:.75rem;margin-top:.75rem}
+.seo-reco-item{background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:.875rem 1rem}
+.seo-reco-title{font-size:13.5px;font-weight:600;color:var(--text);margin-bottom:.25rem}
+.seo-reco-desc{font-size:12.5px;color:var(--muted);line-height:1.5}
+.seo-reco-saving{font-size:11.5px;color:var(--accent);font-weight:600;margin-top:.3rem}
 </style>
 </head>
 <body>
@@ -118,76 +145,113 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
 
   <main class="dash-main">
 
-    <!-- SECTION 1 — Stats -->
-    <div class="section-card">
-      <div class="section-title">📊 Cette semaine</div>
-      <div class="stats-row" style="grid-template-columns:1fr 1fr 1fr">
-        <div class="stat-box">
-          <div class="stat-val" id="stat-conv">—</div>
-          <div class="stat-lbl">Conversations</div>
+    <!-- Navigation par onglets -->
+    <div class="dash-tabs">
+      <button class="dash-tab active" onclick="switchDashTab('dashboard', this)">Tableau de bord</button>
+      <button class="dash-tab" onclick="switchDashTab('seo', this)">🔍 SEO</button>
+    </div>
+
+    <!-- ONGLET : Tableau de bord -->
+    <div id="tab-dashboard" class="dash-tab-content active">
+
+      <!-- SECTION 1 — Stats -->
+      <div class="section-card">
+        <div class="section-title">📊 Cette semaine</div>
+        <div class="stats-row" style="grid-template-columns:1fr 1fr 1fr">
+          <div class="stat-box">
+            <div class="stat-val" id="stat-conv">—</div>
+            <div class="stat-lbl">Conversations</div>
+          </div>
+          <div class="stat-box">
+            <div class="stat-val" id="stat-leads">—</div>
+            <div class="stat-lbl">Leads qualifiés</div>
+          </div>
+          <div class="stat-box">
+            <div class="stat-val" id="stat-rate">—</div>
+            <div class="stat-lbl">Taux de conversion</div>
+          </div>
         </div>
-        <div class="stat-box">
-          <div class="stat-val" id="stat-leads">—</div>
-          <div class="stat-lbl">Leads qualifiés</div>
+      </div>
+
+      <!-- SECTION 1b — Questions sans réponse -->
+      <div class="section-card" id="unanswered-card" style="display:none">
+        <div class="section-title">❓ Questions sans réponse</div>
+        <p class="form-hint">Ces questions ont été posées à votre chatbot mais n'ont pas eu de réponse satisfaisante. Ajoutez-les à votre FAQ d'un clic.</p>
+        <div class="unanswered-list" id="unanswered-list"></div>
+      </div>
+
+      <!-- SECTION 2 — Contact -->
+      <div class="section-card">
+        <div class="section-title">📞 Informations de contact</div>
+        <div class="form-group">
+          <label>Téléphone</label>
+          <input type="tel" id="f-phone" placeholder="Ex: +33 6 12 34 56 78">
         </div>
-        <div class="stat-box">
-          <div class="stat-val" id="stat-rate">—</div>
-          <div class="stat-lbl">Taux de conversion</div>
+        <div class="form-group">
+          <label>Horaires téléphone</label>
+          <input type="text" id="f-phoneHours" placeholder="Ex: Lundi–Vendredi 9h–18h">
+        </div>
+        <div class="form-group">
+          <label>URL de réservation / contact</label>
+          <input type="url" id="f-bookingUrl" placeholder="https://...">
+        </div>
+        <div class="save-row">
+          <button class="btn-save" id="save-contact-btn" onclick="saveContact()">Sauvegarder</button>
+          <span class="save-ok" id="contact-ok">✅ Sauvegardé !</span>
+          <span class="save-err" id="contact-err"></span>
         </div>
       </div>
-    </div>
 
-    <!-- SECTION 1b — Questions sans réponse -->
-    <div class="section-card" id="unanswered-card" style="display:none">
-      <div class="section-title">❓ Questions sans réponse</div>
-      <p class="form-hint">Ces questions ont été posées à votre chatbot mais n'ont pas eu de réponse satisfaisante. Ajoutez-les à votre FAQ d'un clic.</p>
-      <div class="unanswered-list" id="unanswered-list"></div>
-    </div>
+      <!-- SECTION 3 — FAQ -->
+      <div class="section-card">
+        <div class="section-title">📚 Base de connaissances</div>
+        <p class="form-hint">Ajoutez vos informations sous forme de questions/réponses. Votre chatbot s'en servira pour répondre à vos clients.<br>
+          <strong>Exemple :</strong> Q: Êtes-vous ouverts le dimanche ? R: Oui, de 10h à 18h.</p>
+        <div class="faq-editor" id="faq-editor"></div>
+        <button class="btn-add-entry" onclick="addFaqCard('','')">+ Ajouter une question</button>
+        <div class="save-row">
+          <button class="btn-save" id="save-faq-btn" onclick="saveFaq()">Sauvegarder la FAQ</button>
+          <span class="save-ok" id="faq-ok">✅ Sauvegardé ! Votre chatbot sera mis à jour dans 1–2 minutes.</span>
+          <span class="save-err" id="faq-err"></span>
+        </div>
+      </div>
 
-    <!-- SECTION 2 — Contact -->
-    <div class="section-card">
-      <div class="section-title">📞 Informations de contact</div>
-      <div class="form-group">
-        <label>Téléphone</label>
-        <input type="tel" id="f-phone" placeholder="Ex: +33 6 12 34 56 78">
+      <!-- SECTION 4 — Test chatbot -->
+      <div class="section-card" style="overflow-x:hidden">
+        <div class="section-title">🤖 Tester votre chatbot</div>
+        <div class="iframe-wrap">
+          <iframe id="chatbot-iframe" title="Chatbot preview" loading="lazy"></iframe>
+        </div>
+        <button class="btn-secondary" onclick="refreshIframe()">↻ Rafraîchir</button>
       </div>
-      <div class="form-group">
-        <label>Horaires téléphone</label>
-        <input type="text" id="f-phoneHours" placeholder="Ex: Lundi–Vendredi 9h–18h">
-      </div>
-      <div class="form-group">
-        <label>URL de réservation / contact</label>
-        <input type="url" id="f-bookingUrl" placeholder="https://...">
-      </div>
-      <div class="save-row">
-        <button class="btn-save" id="save-contact-btn" onclick="saveContact()">Sauvegarder</button>
-        <span class="save-ok" id="contact-ok">✅ Sauvegardé !</span>
-        <span class="save-err" id="contact-err"></span>
-      </div>
-    </div>
 
-    <!-- SECTION 3 — FAQ -->
-    <div class="section-card">
-      <div class="section-title">📚 Base de connaissances</div>
-      <p class="form-hint">Ajoutez vos informations sous forme de questions/réponses. Votre chatbot s'en servira pour répondre à vos clients.<br>
-        <strong>Exemple :</strong> Q: Êtes-vous ouverts le dimanche ? R: Oui, de 10h à 18h.</p>
-      <div class="faq-editor" id="faq-editor"></div>
-      <button class="btn-add-entry" onclick="addFaqCard('','')">+ Ajouter une question</button>
-      <div class="save-row">
-        <button class="btn-save" id="save-faq-btn" onclick="saveFaq()">Sauvegarder la FAQ</button>
-        <span class="save-ok" id="faq-ok">✅ Sauvegardé ! Votre chatbot sera mis à jour dans 1–2 minutes.</span>
-        <span class="save-err" id="faq-err"></span>
-      </div>
-    </div>
+    </div><!-- /tab-dashboard -->
 
-    <!-- SECTION 4 — Test chatbot -->
-    <div class="section-card" style="overflow-x:hidden">
-      <div class="section-title">🤖 Tester votre chatbot</div>
-      <div class="iframe-wrap">
-        <iframe id="chatbot-iframe" title="Chatbot preview" loading="lazy"></iframe>
+    <!-- ONGLET : SEO -->
+    <div id="tab-seo" class="dash-tab-content">
+      <div class="section-card">
+        <div class="section-title">🔍 Analyse SEO</div>
+        <p class="form-hint">Analysez les performances et le SEO de votre site avec Google PageSpeed Insights.</p>
+        <div class="seo-url-row">
+          <input type="url" id="seo-url" placeholder="https://votre-site.fr">
+          <button class="btn-save" onclick="runPageSpeed()">Analyser</button>
+        </div>
+        <div id="seo-loading" class="seo-loading" style="display:none">
+          <span class="spinner spinner-dark"></span> Analyse en cours… (30–60s)
+        </div>
+        <div id="seo-error" class="seo-error" style="display:none"></div>
+        <div id="seo-results" style="display:none">
+          <div class="seo-scores">
+            <div class="seo-score-box"><div class="seo-score-val" id="seo-perf">—</div><div class="seo-score-lbl">Performance</div></div>
+            <div class="seo-score-box"><div class="seo-score-val" id="seo-access">—</div><div class="seo-score-lbl">Accessibilité</div></div>
+            <div class="seo-score-box"><div class="seo-score-val" id="seo-seo">—</div><div class="seo-score-lbl">SEO</div></div>
+            <div class="seo-score-box"><div class="seo-score-val" id="seo-bp">—</div><div class="seo-score-lbl">Bonnes pratiques</div></div>
+          </div>
+          <div class="section-title" style="margin-top:.5rem">📋 Recommandations</div>
+          <div class="seo-reco-list" id="seo-reco-list"></div>
+        </div>
       </div>
-      <button class="btn-secondary" onclick="refreshIframe()">↻ Rafraîchir</button>
-    </div>
+    </div><!-- /tab-seo -->
 
   </main>
 </div>
@@ -230,6 +294,7 @@ function showDash(data) {
   document.getElementById('f-phone').value = data.phone || '';
   document.getElementById('f-phoneHours').value = data.phoneHours || '';
   document.getElementById('f-bookingUrl').value = data.bookingUrl || '';
+  document.getElementById('seo-url').value = data.bookingUrl || '';
   renderFaqEditor(parseFaq(data.faq || ''));
   // Chatbot iframe
   document.getElementById('chatbot-iframe').src = '/demo-' + slug + '/';
@@ -458,6 +523,71 @@ function buildFaqText() {
     lines.push(q ? 'Q: ' + q + '\nR: ' + r : r);
   });
   return lines.join('\n\n');
+}
+
+// ─── Tabs ─────────────────────────────────────────────────────────────────────
+// INTENTION : Bascule entre les onglets du dashboard en masquant/affichant les sections.
+function switchDashTab(name, btn) {
+  document.querySelectorAll('.dash-tab').forEach(function(b) { b.classList.remove('active'); });
+  document.querySelectorAll('.dash-tab-content').forEach(function(d) { d.classList.remove('active'); });
+  btn.classList.add('active');
+  document.getElementById('tab-' + name).classList.add('active');
+}
+
+// ─── SEO / PageSpeed ──────────────────────────────────────────────────────────
+// INTENTION : Appelle l'API Google PageSpeed Insights et affiche les scores + recommandations.
+async function runPageSpeed() {
+  var url = document.getElementById('seo-url').value.trim();
+  if (!url) return;
+  if (!/^https?:\/\//i.test(url)) url = 'https://' + url;
+  var loading = document.getElementById('seo-loading');
+  var error   = document.getElementById('seo-error');
+  var results = document.getElementById('seo-results');
+  loading.style.display = 'flex';
+  error.style.display   = 'none';
+  results.style.display = 'none';
+  try {
+    var apiUrl = 'https://www.googleapis.com/pagespeedonline/v5/runPagespeed?url=' + encodeURIComponent(url) + '&strategy=mobile';
+    var r = await fetch(apiUrl);
+    if (!r.ok) throw new Error('Erreur API PageSpeed (' + r.status + ')');
+    var data = await r.json();
+    var cats = data.lighthouseResult && data.lighthouseResult.categories;
+    if (!cats) throw new Error("Réponse invalide de l'API PageSpeed");
+    function setScore(elId, score) {
+      var val = score != null ? Math.round(score * 100) : null;
+      var el  = document.getElementById(elId);
+      el.textContent = val != null ? val : '—';
+      el.className = 'seo-score-val ' + (val == null ? '' : val >= 90 ? 'score-green' : val >= 50 ? 'score-orange' : 'score-red');
+    }
+    setScore('seo-perf',   cats.performance   && cats.performance.score);
+    setScore('seo-access', cats.accessibility && cats.accessibility.score);
+    setScore('seo-seo',    cats.seo           && cats.seo.score);
+    setScore('seo-bp',     cats['best-practices'] && cats['best-practices'].score);
+    var audits = (data.lighthouseResult && data.lighthouseResult.audits) || {};
+    var opps = Object.values(audits)
+      .filter(function(a) { return a.details && a.details.type === 'opportunity' && a.score != null && a.score < 1; })
+      .sort(function(a, b) { return ((b.details && b.details.overallSavingsMs) || 0) - ((a.details && a.details.overallSavingsMs) || 0); })
+      .slice(0, 3);
+    var recoList = document.getElementById('seo-reco-list');
+    if (opps.length === 0) {
+      recoList.innerHTML = '<p class="empty-state">✅ Aucune opportunité majeure détectée.</p>';
+    } else {
+      recoList.innerHTML = opps.map(function(a) {
+        var saving = a.displayValue ? '<div class="seo-reco-saving">' + a.displayValue + '</div>' : '';
+        var desc   = a.description ? a.description.replace(/\[([^\]]+)\]\([^)]+\)/g, '$1') : '';
+        return '<div class="seo-reco-item">' +
+          '<div class="seo-reco-title">' + (a.title || '') + '</div>' +
+          (desc ? '<div class="seo-reco-desc">' + desc + '</div>' : '') +
+          saving + '</div>';
+      }).join('');
+    }
+    results.style.display = 'block';
+  } catch(e) {
+    error.textContent    = e.message;
+    error.style.display  = 'block';
+  } finally {
+    loading.style.display = 'none';
+  }
 }
 
 // ─── Boot ─────────────────────────────────────────────────────────────────────
