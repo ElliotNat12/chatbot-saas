@@ -148,19 +148,22 @@ Claude émet des tags spéciaux dans ses réponses, strippés avant affichage :
 - Bouton 🔗 dans "Tester & évaluer"
 - Tracking conversion Shopify : clic panier → converted=true (ecommerce only, idempotent)
 - Crons : rapport hebdo + suggestions auto
+- Onglet SEO PageSpeed Insights (4 scores + recommandations, proxy via client-data)
 
 ## À FAIRE ⬜
-1. Onglet SEO PageSpeed Insights (espace client)
-2. Améliorer detectUnanswered() patterns
-3. Rate limiting Supabase-backed (remplacer in-memory Map)
-4. Seuil cleanup Supabase → 2000 rows
-5. Maison Bichonne : tester le flow Frameship en production sur maisonbichonne.fr
+1. Améliorer detectUnanswered() patterns
+2. Rate limiting Supabase-backed (remplacer in-memory Map)
+3. Seuil cleanup Supabase → 2000 rows
+4. Maison Bichonne : tester le flow Frameship en production sur maisonbichonne.fr
 
 ## Dernières updates
-### 09 juin 2026 — Audit & fixes
-- e7719d0 docs: rewrite CLAUDE.md with proper technical architecture
+### 09 juin 2026 — Audit complet + SEO tab
+- Audit complet : 5 problèmes critiques identifiés et corrigés
 - 3372c40 fix: hardcoded URL, XSS escaping, GitHub retry, sendLog on tab close
-- Index Supabase créés : business_name, created_at, session_id + colonne session_id ajoutée
+- Index Supabase créés + colonne session_id ajoutée
+- Onglet SEO PageSpeed Insights dans espace client (4 scores + recommandations)
+- Refactoring : pagespeed fusionné dans client-data (limite 12 fonctions Vercel)
+- 4abeb9a fix: request all 4 PageSpeed categories
 
 ### 09 juin 2026
 - 03d862e feat: stats conversion rate + unanswered questions in client dashboard
