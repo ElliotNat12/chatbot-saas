@@ -547,7 +547,7 @@ async function runPageSpeed() {
   error.style.display   = 'none';
   results.style.display = 'none';
   try {
-    var apiUrl = '/api/pagespeed?url=' + encodeURIComponent(url);
+    var apiUrl = '/api/client-data?data=pagespeed&url=' + encodeURIComponent(url);
     var r = await fetch(apiUrl, { headers: { 'Authorization': 'Bearer ' + getToken() } });
     if (!r.ok) throw new Error('Erreur API PageSpeed (' + r.status + ')');
     var data = await r.json();

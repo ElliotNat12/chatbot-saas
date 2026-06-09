@@ -127,6 +127,26 @@ module.exports = async function handler(req, res) {
     const ghToken = process.env.GITHUB_TOKEN;
 
     if (req.method === 'GET') {
+      // ── GET ?data=pagespeed — proxy PageSpeed Insights (clé API côté serveur) ──
+      if (req.query.data === 'pagespeed') {
+        const { url } = req.query;
+        if (!url) return res.status(400).json({ error: 'Missing url parameter' });
+        if (!/^https?:\/\//i.test(url)) return res.status(400).json({ error: 'URL must start with http:// or https://' });
+        const key = process.env.PAGESPEED_API_KEY;
+        const psUrl = 'https://www.googleapis.com/pagespeedonline/v5/runPagespeed'
+          + '?url=' + encodeURIComponent(url)
+          + '&strategy=mobile'
+          + (key ? '&key=' + key : '');
+        try {
+          const r = await fetch(psUrl);
+          const psData = await r.json();
+          if (!r.ok) return res.status(502).json({ error: 'PageSpeed API error', detail: psData });
+          return res.status(200).json(psData);
+        } catch (err) {
+          return res.status(500).json({ error: err.message });
+        }
+      }
+
       try {
         const data = await getFaqData(jwtSlug, ghToken);
         const { _file, config, ...safe } = data;
