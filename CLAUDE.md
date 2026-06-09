@@ -86,6 +86,45 @@
 - neokebo, tankiste, restaurant, le-gou-pei → ecommerce=false
 - onboarding → template démonstration
 
+## Maison Bichonne — Intégration Shopify (détails techniques)
+Client ecommerce avec intégration Shopify avancée. Tout est dans `widget/chatbot.js` (commun) + `demo-maison-bichonne/config.js`.
+
+### Système de tags Shopify (parsés dans chatbot.js)
+Claude émet des tags spéciaux dans ses réponses, strippés avant affichage :
+- `[COULEURS]` → affiche 4 boutons couleur (Orange brique, Framboise, Vert émeraude, Noir)
+- `[TAILLES:coloris]` → affiche boutons S/M/L/XL pour le coloris sélectionné
+- `[PANIER:variantId:label]` → crée un bouton "Ajouter au panier" avec l'ID de variante Shopify
+- Si `[TAILLES]` et `[COULEURS]` co-présents → `[COULEURS]` ignoré (tailles prennent le dessus)
+- Débardeur noir : pas de `[COULEURS]`, directement `[TAILLES:Noir]`
+
+### Accumulateur panier + sticky cart
+- `addToCart(variantId)` accumule les IDs dans `cartItems[]` sans redirection
+- `updateStickyCart()` reconstruit le bouton sticky "Voir mon panier (N articles)"
+- URL panier : `cfg.shopify?.storeUrl || cfg.bookingUrl` + `/cart/id1:1,id2:1`
+- Sur maisonbichonne.fr : tente Frameship (`/cart/add.js`) puis ouvre le tiroir panier natif Shopify, fallback `window.open` vers myshopify.com
+- Sur les autres domaines (demo, espace client) : `target="_blank"` vers myshopify.com
+
+### Bilingue FR/EN
+- Toggle 🇫🇷/🇬🇧 dans le header du widget
+- `currentLang` switche les suggestions, placeholder, home screen
+- `detectLanguage()` analyse les messages user pour auto-détecter EN vs FR
+- `suggestionsEn[]` dans config.js pour les chips EN
+- `welcomeMessageEn` pour le message d'accueil EN
+
+### Positionnement
+- Sur maisonbichonne.fr : widget positionné à gauche (CSS injecté via hostname check)
+- `#cb-launcher { right: auto; left: 24px }` + même chose pour `#cb-window`
+
+### Cross-sell fin de panier
+- `systemPromptExtra` dans config.js définit le flow de vente complet
+- Après ajout au panier : Claude propose un cross-sell contextuel selon le produit ajouté
+- Logique produit, guide des tailles, règles de conversion détaillées dans le prompt
+
+### Points d'attention
+- Les variantes Shopify (IDs numériques) sont dans la FAQ / systemPromptExtra de config.js
+- Ne pas émettre `[SHOW_FORM]` ni `[NOTIFY]` en mode ecommerce (ligne dans buildSystemPrompt)
+- Le flow couleur → taille → panier doit rester séquentiel dans les réponses Claude
+
 ## Conventions
 - Commits : feat: / fix: / docs: / refactor: en anglais
 - CSS : variables --accent, --border, --bg, --muted, --text, --radius, --surface
@@ -115,6 +154,7 @@
 2. Améliorer detectUnanswered() patterns
 3. Rate limiting Supabase-backed (remplacer in-memory Map)
 4. Seuil cleanup Supabase → 2000 rows
+5. Maison Bichonne : tester le flow Frameship en production sur maisonbichonne.fr
 
 ## Dernières updates
 ### 09 juin 2026 — Audit & fixes
