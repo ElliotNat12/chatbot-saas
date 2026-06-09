@@ -75,6 +75,20 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
 .btn-add-faq:hover{opacity:.85}
 .btn-add-faq:disabled{opacity:.4;cursor:not-allowed}
 .empty-state{font-size:13px;color:var(--muted);text-align:center;padding:1rem 0}
+
+/* ─── FAQ Editor ─── */
+.faq-editor{display:flex;flex-direction:column;gap:.75rem;margin-bottom:.75rem}
+.faq-card{background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:1rem}
+.faq-card-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:.6rem}
+.faq-num{font-size:12px;font-weight:600;color:var(--muted)}
+.faq-del{background:none;border:none;cursor:pointer;font-size:15px;color:var(--muted);padding:0 4px;line-height:1;transition:color .15s}
+.faq-del:hover{color:#dc2626}
+.faq-card .faq-q{width:100%;border:1px solid #dde2e8;border-radius:8px;padding:9px 12px;font-size:14px;font-family:inherit;outline:none;transition:border-color .15s;background:#fff;margin-bottom:.5rem}
+.faq-card .faq-q:focus{border-color:var(--accent)}
+.faq-card .faq-r{width:100%;border:1px solid #dde2e8;border-radius:8px;padding:9px 12px;font-size:14px;font-family:inherit;outline:none;transition:border-color .15s;background:#fff;resize:vertical;min-height:80px}
+.faq-card .faq-r:focus{border-color:var(--accent)}
+.btn-add-entry{padding:7px 14px;background:transparent;border:1px dashed var(--accent);border-radius:8px;font-size:13px;font-weight:600;color:var(--accent);cursor:pointer;font-family:inherit;width:100%;transition:background .15s;margin-bottom:.5rem}
+.btn-add-entry:hover{background:var(--accent-lt)}
 </style>
 </head>
 <body>
@@ -157,9 +171,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
       <div class="section-title">📚 Base de connaissances</div>
       <p class="form-hint">Ajoutez vos informations sous forme de questions/réponses. Votre chatbot s'en servira pour répondre à vos clients.<br>
         <strong>Exemple :</strong> Q: Êtes-vous ouverts le dimanche ? R: Oui, de 10h à 18h.</p>
-      <div class="form-group">
-        <textarea id="f-faq" placeholder="Ajoutez vos infos ici..."></textarea>
-      </div>
+      <div class="faq-editor" id="faq-editor"></div>
+      <button class="btn-add-entry" onclick="addFaqCard('','')">+ Ajouter une question</button>
       <div class="save-row">
         <button class="btn-save" id="save-faq-btn" onclick="saveFaq()">Sauvegarder la FAQ</button>
         <span class="save-ok" id="faq-ok">✅ Sauvegardé ! Votre chatbot sera mis à jour dans 1–2 minutes.</span>
@@ -217,7 +230,7 @@ function showDash(data) {
   document.getElementById('f-phone').value = data.phone || '';
   document.getElementById('f-phoneHours').value = data.phoneHours || '';
   document.getElementById('f-bookingUrl').value = data.bookingUrl || '';
-  document.getElementById('f-faq').value = data.faq || '';
+  renderFaqEditor(parseFaq(data.faq || ''));
   // Chatbot iframe
   document.getElementById('chatbot-iframe').src = '/demo-' + slug + '/';
   // Load stats
@@ -344,7 +357,7 @@ async function saveFaq() {
   ok.style.display = 'none'; err.style.display = 'none';
   btn.disabled = true; btn.innerHTML = '<span class="spinner spinner-dark"></span>Sauvegarde…';
   try {
-    await apiSave({ faq: document.getElementById('f-faq').value });
+    await apiSave({ faq: buildFaqText() });
     ok.style.display = 'inline';
     setTimeout(() => { ok.style.display = 'none'; }, 5000);
   } catch(e) {
@@ -365,19 +378,83 @@ async function addToFaq(btn, question) {
   btn.disabled = true;
   btn.textContent = '…';
   try {
-    var currentFaq = document.getElementById('f-faq').value.trim();
-    var newEntry = '
-Q: ' + question + '
-R: ';
-    document.getElementById('f-faq').value = currentFaq + newEntry;
-    document.getElementById('f-faq').scrollIntoView({ behavior: 'smooth', block: 'center' });
-    document.getElementById('f-faq').focus();
+    addFaqCard(question, '');
+    var cards = document.getElementById('faq-editor').querySelectorAll('.faq-card');
+    var lastCard = cards[cards.length - 1];
+    lastCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    lastCard.querySelector('.faq-r').focus();
     btn.textContent = '✓ Ajouté';
     btn.style.background = 'var(--green)';
   } catch(e) {
     btn.disabled = false;
     btn.textContent = '+ FAQ';
   }
+}
+
+// ─── FAQ Editor ──────────────────────────────────────────────────────────────
+function parseFaq(text) {
+  var entries = [];
+  var raw = text.trim();
+  if (!raw) return entries;
+  // Split on newline followed by "Q:" (handles both first block and subsequent)
+  var blocks = raw.split(/\n(?=Q:\s*)/);
+  for (var i = 0; i < blocks.length; i++) {
+    var block = blocks[i].trim();
+    if (!block) continue;
+    // Strip leading "Q:"
+    var qBody = block.startsWith('Q:') ? block.slice(2) : block;
+    var rIdx = qBody.search(/\nR:\s*/);
+    var q, r;
+    if (rIdx !== -1) {
+      q = qBody.slice(0, rIdx).trim();
+      r = qBody.slice(rIdx).replace(/^\nR:\s*/, '').trim();
+    } else {
+      q = qBody.trim();
+      r = '';
+    }
+    if (q || r) entries.push({ q: q, r: r });
+  }
+  return entries;
+}
+
+function renderFaqEditor(entries) {
+  var container = document.getElementById('faq-editor');
+  container.innerHTML = '';
+  if (entries.length === 0) { addFaqCard('', ''); return; }
+  entries.forEach(function(e) { addFaqCard(e.q, e.r); });
+}
+
+function addFaqCard(question, answer) {
+  var container = document.getElementById('faq-editor');
+  var idx = container.children.length + 1;
+  var card = document.createElement('div');
+  card.className = 'faq-card';
+  card.innerHTML =
+    '<div class="faq-card-header">' +
+      '<span class="faq-num">#' + idx + '</span>' +
+      '<button class="faq-del" onclick="this.closest(\'.faq-card\').remove();renumberFaq()" title="Supprimer">🗑</button>' +
+    '</div>' +
+    '<input class="faq-q" type="text" placeholder="Question…">' +
+    '<textarea class="faq-r" placeholder="Réponse…"></textarea>';
+  card.querySelector('.faq-q').value = question || '';
+  card.querySelector('.faq-r').value = answer || '';
+  container.appendChild(card);
+}
+
+function renumberFaq() {
+  document.getElementById('faq-editor').querySelectorAll('.faq-card').forEach(function(card, i) {
+    card.querySelector('.faq-num').textContent = '#' + (i + 1);
+  });
+}
+
+function buildFaqText() {
+  var lines = [];
+  document.getElementById('faq-editor').querySelectorAll('.faq-card').forEach(function(card) {
+    var q = card.querySelector('.faq-q').value.trim();
+    var r = card.querySelector('.faq-r').value.trim();
+    if (q || r) lines.push('Q: ' + q + '\nR: ' + r);
+  });
+  return lines.join('\n\n');
 }
 
 // ─── Boot ─────────────────────────────────────────────────────────────────────
