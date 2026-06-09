@@ -156,11 +156,19 @@ module.exports = async function handler(req, res) {
         if (bookingUrl !== undefined) config.bookingUrl = bookingUrl;
         if (config.phone) config.errorMessage = `Je rencontre un problème. Contactez-nous au ${config.phone}.`;
         const encoded = Buffer.from(`ChatbotSaaS.init(${JSON.stringify(config, null, 2)});\n`).toString('base64');
-        const putRes = await fetch(`${GITHUB_API}/repos/${REPO}/contents/demo-${jwtSlug}/config.js`, {
+        const ghPath = `demo-${jwtSlug}/config.js`;
+        const putBody = (sha) => JSON.stringify({ message: `client update: ${jwtSlug}`, content: encoded, sha });
+        const doPut = (sha) => fetch(`${GITHUB_API}/repos/${REPO}/contents/${ghPath}`, {
           method: 'PUT',
           headers: { 'Authorization': `Bearer ${ghToken}`, 'Accept': 'application/vnd.github+json', 'Content-Type': 'application/json' },
-          body: JSON.stringify({ message: `client update: ${jwtSlug}`, content: encoded, sha: file.sha })
+          body: putBody(sha)
         });
+        let putRes = await doPut(file.sha);
+        // 409 = SHA conflict — refetch and retry once
+        if (putRes.status === 409) {
+          const fresh = await getGithubFile(ghPath, ghToken);
+          if (fresh) putRes = await doPut(fresh.sha);
+        }
         if (!putRes.ok) return res.status(502).json({ error: 'GitHub push error', detail: await putRes.text() });
         return res.status(200).json({ ok: true });
       } catch (err) {

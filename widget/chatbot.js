@@ -570,7 +570,7 @@
       if (!stickyEl) return;
       if (cartItems.length === 0) { stickyEl.style.display = 'none'; return; }
       const cartPath = cartItems.map(id => id + ':1').join(',');
-      const cartUrl = 'https://maison-bichonne.myshopify.com/cart/' + cartPath;
+      const cartUrl = (cfg.shopify?.storeUrl || cfg.bookingUrl || '') + '/cart/' + cartPath;
       const label = cartItems.length === 1 ? 'Voir mon panier (1 article)' : 'Voir mon panier (' + cartItems.length + ' articles)';
       stickyEl.innerHTML = '<a id="cb-sticky-cart-link" href="' + cartUrl + '">' + label + '</a>';
       const link = document.getElementById('cb-sticky-cart-link');
@@ -993,6 +993,10 @@
 
     if (cfg.badgeDelay !== false) setTimeout(() => { if (!isOpen) badge.classList.add('visible'); }, cfg.badgeDelay || 4000);
     if (cfg.autoOpen) setTimeout(openChat, cfg.autoOpen);
+
+    // INTENTION : Envoie le log si l'onglet est masqué ou fermé (logSent empêche les doublons).
+    document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') sendLog(); });
+    window.addEventListener('beforeunload', () => sendLog());
 
     return {
       open: openChat,

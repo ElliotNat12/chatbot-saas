@@ -3,6 +3,10 @@ const GITHUB_API = 'https://api.github.com';
 const VERCEL_URL = process.env.VERCEL_URL || 'https://chatbot-saas-nine.vercel.app';
 const crypto = require('crypto');
 
+function escapeHtml(s) {
+  return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}
+
 function svcH() {
   const key = process.env.SUPABASE_SERVICE_KEY || process.env.SUPABASE_ANON_KEY;
   return {
@@ -45,11 +49,11 @@ function generateConfigJs(data) {
 }
 
 function generateIndexHtml(data) {
-  const color = data.accentColor || '#2563eb';
-  const name = data.businessName || 'Mon entreprise';
-  const desc = data.businessDescription || '';
-  const phone = data.phone || '';
-  const bookingUrl = data.bookingUrl || '';
+  const color = escapeHtml(data.accentColor || '#2563eb');
+  const name = escapeHtml(data.businessName || 'Mon entreprise');
+  const desc = escapeHtml(data.businessDescription || '');
+  const phone = escapeHtml(data.phone || '');
+  const bookingUrl = escapeHtml(data.bookingUrl || '');
 
   return `<!DOCTYPE html>
 <html lang="fr">
