@@ -32,7 +32,27 @@ module.exports = async function handler(req, res) {
   if (req.method === 'OPTIONS') return res.status(200).end();
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
-  const { businessName, messages, language, leadScore, converted, sessionDurationSeconds } = req.body;
+  const { action, businessName, messages, language, leadScore, converted, sessionDurationSeconds, sessionId } = req.body;
+
+  // INTENTION : Mise à jour ponctuelle converted=true quand le visiteur clique sur le panier, avant le log final.
+  if (action === 'cart_click') {
+    if (sessionId && businessName) {
+      await fetch(
+        `${process.env.SUPABASE_URL}/rest/v1/conversations?session_id=eq.${encodeURIComponent(sessionId)}&business_name=eq.${encodeURIComponent(businessName)}`,
+        {
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json',
+            'apikey': process.env.SUPABASE_ANON_KEY,
+            'Authorization': `Bearer ${process.env.SUPABASE_ANON_KEY}`,
+            'Prefer': 'return=minimal'
+          },
+          body: JSON.stringify({ converted: true })
+        }
+      ).catch(() => {});
+    }
+    return res.status(200).json({ ok: true });
+  }
 
   if (!messages || !Array.isArray(messages)) {
     return res.status(400).json({ error: 'Missing or invalid messages' });
@@ -57,6 +77,7 @@ module.exports = async function handler(req, res) {
         converted: converted || false,
         session_duration_seconds: sessionDurationSeconds || null,
         unanswered_questions,
+        session_id: sessionId || null,
       })
     });
 

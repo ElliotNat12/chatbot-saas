@@ -390,7 +390,8 @@
     const homeStartBtn   = document.getElementById('cb-home-start');
 
     let history = [], cartItems = [], isOpen = false, isTyping = false, greeted = false, lead = {}, notifySent = false, formShown = false, currentLang = 'fr';
-    let sessionStart = Date.now(), logSent = false;
+    let sessionStart = Date.now(), logSent = false, cartConverted = false;
+    const sessionId = Math.random().toString(36).slice(2) + Date.now().toString(36);
 
     function detectLanguage() {
       const userTexts = history.filter(m => m.role === 'user').map(m => m.content).join(' ').toLowerCase();
@@ -407,8 +408,9 @@
         messages: history,
         language: detectLanguage(),
         leadScore: lead.score || null,
-        converted: notifySent,
-        sessionDurationSeconds: Math.round((Date.now() - sessionStart) / 1000)
+        converted: notifySent || cartConverted,
+        sessionDurationSeconds: Math.round((Date.now() - sessionStart) / 1000),
+        sessionId
       };
       fetch('/api/log', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) }).catch(() => {});
     }
@@ -529,6 +531,7 @@
           a.addEventListener('click', (e) => {
             e.preventDefault();
             addToCart(tag.id, fallbackUrl);
+            trackConversion();
             // INTENTION : Confirmation visuelle 1.5s après ajout au panier.
             a.textContent = '✓ Ajouté';
             setTimeout(() => { a.textContent = originalLabel; }, 1500);
@@ -554,7 +557,7 @@
         a.href = url;
         a.rel = 'noopener noreferrer';
         a.textContent = label;
-        a.addEventListener('click', (e) => { e.preventDefault(); addToCart(variantId, url); });
+        a.addEventListener('click', (e) => { e.preventDefault(); addToCart(variantId, url); trackConversion(); });
         wrap.appendChild(a);
         messages.appendChild(wrap);
         messages.scrollTop = messages.scrollHeight;
@@ -574,6 +577,7 @@
       if (window.location.hostname.includes('maisonbichonne')) {
         // INTENTION : Sur le vrai site, tente l'API Shopify (Frameship) puis bascule sur nouvel onglet.
         link.addEventListener('click', (e) => {
+          trackConversion();
           if (window.__frameship || window.FrameShip) {
             e.preventDefault();
             Promise.all(cartItems.map(id => fetch('/cart/add.js', {
@@ -590,6 +594,7 @@
           }
         });
       } else {
+        link.addEventListener('click', () => trackConversion());
         link.target = '_blank';
       }
       stickyEl.style.display = 'block';
@@ -599,6 +604,17 @@
     function addToCart(variantId, fallbackUrl) {
       if (variantId && !cartItems.includes(variantId)) cartItems.push(variantId);
       updateStickyCart();
+    }
+
+    // INTENTION : Marque la session comme convertie au premier clic panier (ecommerce uniquement).
+    function trackConversion() {
+      if (!cfg.ecommerce || cartConverted) return;
+      cartConverted = true;
+      fetch('/api/log', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'cart_click', converted: true, businessName: cfg.businessName || null, sessionId })
+      }).catch(() => {});
     }
 
     function showTyping() {
