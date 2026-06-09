@@ -1,158 +1,126 @@
-# ChatbotSaaS — Prompt Projet
+# ChatbotSaaS — Contexte projet pour Claude Code
 
-Utilise ce document au début de chaque session pour donner le contexte complet à Claude.
-À la fin de chaque session de travail, mets à jour la section "Dernières updates".
+## Identité du projet
+- **Nom :** ChatbotSaaS
+- **Statut :** EN PRODUCTION
+- **URL prod :** https://chatbot-saas-nine.vercel.app
+- **Repo :** ElliotNat12/chatbot-saas
+- **Owner :** Elliot
 
+## Stack technique
+- **Frontend :** HTML / CSS / JS pur — zéro framework, zéro dépendance
+- **Backend :** Vercel Serverless (Node.js dans /api/)
+- **IA :** Anthropic Claude Haiku (via /api/chat, clé jamais exposée côté client)
+- **Base de données :** Supabase (PostgreSQL)
+- **Email :** Resend API
+- **WhatsApp :** Twilio Sandbox
+- **Deploy :** automatique sur chaque git push main (~1 min)
 
-## 📋 PROMPT DE DÉBUT DE SESSION
-Colle ce texte au début de chaque conversation :
-Je travaille sur ChatbotSaaS, un SaaS de chatbots pour TPE/PME françaises.
+## Variables d'environnement Vercel
+- ANTHROPIC_API_KEY — Appels Claude
+- RESEND_API_KEY — Emails notifications leads
+- TWILIO_ACCOUNT_SID / TWILIO_AUTH_TOKEN / TWILIO_WHATSAPP_TO — WhatsApp
+- SUPABASE_URL / SUPABASE_ANON_KEY / SUPABASE_SERVICE_KEY — Base de données
+- GITHUB_TOKEN — Lecture/écriture config clients GitHub
+- ADMIN_SECRET — Mot de passe dashboard admin (admin2026)
+- JWT_SECRET — Signature JWT espaces clients
 
-**Repo GitHub :** ElliotNat12/chatbot-saas
-**URL prod :** https://chatbot-saas-nine.vercel.app
-**Stack :** HTML/JS statique + Vercel Serverless (Node.js) + Supabase + GitHub API
+## Architecture des fichiers
 
----
+### Frontend
+- admin/index.html — Dashboard admin (x-admin-secret: admin2026)
+  Onglets : Vue globale | Nouveau client | CRM | Tester & évaluer | Guide & outils
+  Fonctions clés : sendInvite(slug), onClientSelect(), generateSuggestionsForClient()
 
-### Architecture des fichiers
+- client/index.html — Espace client par slug (/client/{slug})
+  Auth : JWT 24h localStorage (clé: client-token-{slug})
+  Sections : Stats | Questions sans réponse | Infos contact | FAQ editor | Test live
+  Fonctions clés : parseFaq(), buildFaqText(), addFaqCard(), saveFaq(), saveContact()
+  Parser FAQ : gère "Q: ...\nR: ..." ET texte libre (carte unique)
 
-- `admin/index.html` — Dashboard admin (protégé par mot de passe admin2026)
-  - Onglets : Vue globale, Nouveau client, CRM, Tester & évaluer, Guide & outils
-  - Fonctions clés : sendInvite(slug), onClientSelect(), generateSuggestionsForClient()
+- widget/chatbot.js — Widget universel embarquable (monolithique, ~1119 lignes, IIFE)
+  config.ecommerce = true → mode boutique (sticky cart, addToCart, trackConversion)
+  trackConversion() : idempotente, ecommerce-only, fire-and-forget vers /api/log
+  sendLog() : déclenché à fermeture ou après 20 messages
+  converted = notifySent || cartConverted
+  sessionId généré à l'init, envoyé dans tous les logs
 
-- `client/index.html` — Espace client (auth JWT par slug)
-  - Sections : Stats semaine, Questions sans réponse, Infos contact, Éditeur FAQ, Test chatbot live
-  - Parser FAQ : gère format Q:/R: ET texte libre
-  - Auth : login mot de passe → JWT 24h stocké en localStorage
+- demo-{slug}/ — Un dossier par client
+  config.js → ChatbotSaaS.init({businessName, botName, faq, phone, bookingUrl, accentColor, ecommerce, suggestions, avatar})
+  index.html → faux site vitrine
 
-- `api/client-auth.js` — Auth client (lien magique + login + JWT)
-  - GET ?slug=&token= → page activation (choisir mot de passe)
-  - POST action=setup → hash mot de passe, invalide token
-  - POST action=login → vérifie bcrypt, retourne JWT
+### API Vercel Serverless
+- api/chat.js — Rate limiting + routing → Anthropic API
+- api/log.js — Log conversations Supabase
+  action="cart_click" → PATCH converted=true sur session_id existant
+  INSERT final : session_id, messages, lead_score, converted, unanswered_questions
+  detectUnanswered() : patterns basiques (à améliorer)
+- api/notify.js — Email Resend + WhatsApp Twilio si lead chaud
+- api/client-auth.js — Auth client
+  GET ?slug=&token= → page activation
+  POST action=setup → hash bcrypt, invalide token
+  POST action=login → vérifie bcrypt, retourne JWT
+- api/client-data.js — CRUD FAQ + stats
+  GET Bearer JWT → FAQ, infos contact, stats Supabase
+  POST Bearer JWT → update FAQ ou contact sur GitHub
+  GET ?data=stats → conversations, leads, conversion_rate, unanswered
+- api/admin-deploy.js — action=invite (setup_token Supabase) | action=deploy
+- api/crm.js — Données CRM
+- api/onboarding-form.js — Formulaire onboarding
+- api/scrape.js — Scraping site client pour pré-remplir FAQ
+- api/suggest-improvements.js — Suggestions IA (Claude)
+- api/weekly-report.js — Rapport hebdo (cron lundi 7h)
 
-- `api/client-data.js` — Lecture/écriture FAQ + stats
-  - GET Bearer JWT → retourne FAQ, infos contact, stats
-  - POST Bearer JWT → update FAQ ou infos contact sur GitHub
-  - GET ?data=stats → conversations, leads, conversion_rate, unanswered (Supabase)
+### Config
+- config/questionnaires.js — Templates questionnaires onboarding
+- config/suggestions-templates.js — Templates suggestions
+- vercel.json — Rewrites /client/:slug + crons (lundi 7h rapport, lundi 9h suggestions)
+- package.json — bcryptjs, resend, twilio
 
-- `api/admin-deploy.js` — Actions admin
-  - action=invite → génère setup_token, l'écrit en Supabase, retourne inviteUrl
-  - action=deploy → redéploie un client
+## Supabase — Tables
+- conversations : id, session_id, business_name, messages JSONB, lead_score, converted, unanswered_questions, created_at
+- client_auth : slug, password_hash, setup_token, setup_token_expires_at
 
-- `api/log.js` — Log des conversations
-  - Enregistre en Supabase : messages, lead_score, converted, unanswered_questions
-  - converted = lead qualifié notifié (PAS encore = clic Shopify pour ecommerce)
-  - detectUnanswered() : patterns basiques (à améliorer)
+## Clients actifs
+- maison-bichonne → boutique vêtements allaitement, ecommerce=true
+- neokebo, tankiste, restaurant, le-gou-pei → ecommerce=false
+- onboarding → template démonstration
 
-- `api/chat.js` — Rate limiting + routing messages vers Claude API
-
-- `widget/chatbot.js` — Widget chatbot embarquable (monolithique ~900 lignes)
-  - config.ecommerce : mode boutique en ligne (sticky cart, addToCart)
-  - sendLog() : déclenché à fermeture ou après 20 messages
-  - notifySent → converted dans les logs
-
-- `demo-{slug}/config.js` — Config de chaque client (ChatbotSaaS.init({...}))
-  - Champs : businessName, botName, faq, phone, bookingUrl, accentColor, ecommerce, suggestions...
-
-- `config/questionnaires.js` — Templates de questionnaires onboarding
-- `config/suggestions-templates.js` — Templates de suggestions d'amélioration
-
----
-
-### Clients actifs
-- maison-bichonne (boutique en ligne, ecommerce=true)
-- neokebo
-- tankiste
-- restaurant
-- le-gou-pei
-- onboarding (template)
-
----
-
-### Supabase — Tables principales
-- `conversations` : session_id, business_name, messages, lead_score, converted, unanswered_questions, created_at
-- `client_auth` : slug, password_hash, setup_token, setup_token_expires_at
-- Variables env : SUPABASE_URL, SUPABASE_ANON_KEY, SUPABASE_SERVICE_KEY, GITHUB_TOKEN, ADMIN_SECRET, JWT_SECRET
-
----
-
-### Ce qui est fait et fonctionnel
-- ✅ Dashboard admin complet (stats, CRM, FAQ editor, test live, suggestions IA)
-- ✅ Espace client : login JWT, stats (conversations/leads/taux conversion), questions sans réponse, éditeur FAQ structuré carte par carte, infos contact, test chatbot iframe
-- ✅ Lien magique d'activation client (setup_token Supabase, 7 jours)
-- ✅ Modal invite : lien magique + URL connexion permanente + bouton mailto pré-rempli
-- ✅ Bouton "🔗 Lien d'activation" dans onglet "Tester & évaluer" du dashboard admin
-- ✅ Parser FAQ : format Q:/R: ET texte libre dans une seule carte
-
----
-
-### En cours / À faire
-- 🔄 Tracking conversion Shopify (clic panier → converted=true, ecommerce only) — audit fait, pas encore implémenté
-- ⬜ Onglet SEO dans espace client (PageSpeed Insights API)
-- ⬜ Améliorer detectUnanswered() avec plus de patterns
-- ⬜ Intégration partenaire SEO/analytics (ton ami dev)
-
----
-
-### Conventions
-- Commits en anglais : "feat:", "fix:", "docs:"
-- Pas de framework JS — HTML/CSS/JS vanilla uniquement
-- CSS : variables CSS (--accent, --border, --bg, --muted, --text, --radius)
+## Conventions
+- Commits : feat: / fix: / docs: / refactor: en anglais
+- CSS : variables --accent, --border, --bg, --muted, --text, --radius, --surface
 - Auth admin : header x-admin-secret: admin2026
 - Auth client : header Authorization: Bearer {jwt}
-- GitHub API utilisée pour lire/écrire les config.js des clients
+- JS vanilla uniquement — pas de framework, pas de bundler
+- GitHub API pour lire/écrire config.js clients (pas de DB pour ça)
 
----
+## Ajouter un client (15 min)
+1. cp -r demo-restaurant demo-{slug}
+2. Modifier config.js et index.html
+3. git add . && git commit && git push
+4. Dashboard admin → Nouveau client → remplir fiche
+5. Tester & évaluer → 🔗 Lien d'activation → envoyer au client
 
-## 🔄 SECTION DERNIÈRES UPDATES
+## Ce qui est FAIT ✅
+- Dashboard admin complet (stats, CRM, FAQ editor, test live, suggestions IA, crons)
+- Espace client : JWT auth, stats 3 colonnes, questions sans réponse + ajout FAQ 1 clic, éditeur FAQ structuré, infos contact, test iframe
+- Auth client : lien magique (7j) + login mot de passe + JWT
+- Modal invite : lien magique + URL connexion permanente + mailto pré-rempli
+- Bouton 🔗 dans "Tester & évaluer"
+- Tracking conversion Shopify : clic panier → converted=true (ecommerce only, idempotent)
+- Crons : rapport hebdo + suggestions auto
 
-Mets à jour cette section à la fin de chaque session de travail.
-Format : date — ce qui a été fait — ce qui reste
+## À FAIRE ⬜
+1. Onglet SEO dans espace client (Google PageSpeed Insights API)
+2. Améliorer detectUnanswered() avec plus de patterns
+3. Intégration partenaire SEO/analytics (Semrush ou GA Data API)
 
-
+## Dernières updates
 ### 09 juin 2026
-Session : Dashboard client + Dashboard admin
-
-**Fait aujourd'hui :**
-- ✅ Ajout stat "Taux de conversion" (3e colonne dans les stats client)
-- ✅ Section "Questions sans réponse" avec bouton "+ FAQ" pour ajouter en 1 clic
-- ✅ Éditeur FAQ structuré carte par carte (Q/R) avec parseFaq() + buildFaqText()
-- ✅ Fix parser FAQ : gère texte libre (sans Q:/R:) en une seule carte "Informations générales"
-- ✅ Bouton "🔗 Lien d'activation" ajouté dans onglet "Tester & évaluer" du dashboard admin
-- ✅ Modal invite amélioré : URL de connexion permanente + bouton "📧 Envoyer par email" (mailto pré-rempli)
-- ✅ Audit du tracking conversion : converted = lead notifié (pas clic Shopify) — à corriger
-
-**Commits du jour :**
-- `03d862e` feat: stats conversion rate + unanswered questions in client dashboard
-- `364d60d` feat: structured FAQ editor in client dashboard
-- `bb282db` fix: FAQ parser handles free-text format (no Q/R structure)
-- `6e8c29b` feat: add magic link button in Tester & evaluer tab
-- `524a83e` feat: add login URL + mailto in invite modal
-
-**À faire en priorité prochaine session :**
-- Implémenter tracking clic Shopify → converted=true (ecommerce only)
-- Onglet SEO via PageSpeed Insights dans espace client
-
----
-
-## 📝 PROMPT DE FIN DE SESSION
-À la fin d'une session de travail (ou quand on a beaucoup avancé), colle ce prompt dans Claude.ai pour mettre à jour ce document :
-
-> Mets à jour le fichier ChatbotSaaS_Prompt_Projet.md avec ce qu'on a fait aujourd'hui.
->
-> Ajoute une nouvelle entrée dans "SECTION DERNIÈRES UPDATES" avec :
-> - La date d'aujourd'hui
-> - La liste de ce qui a été fait (avec les commits si possible)
-> - Ce qui reste à faire en priorité
->
-> Voici ce qu'on a fait : [DÉCRIS BRIÈVEMENT LA SESSION]
-
----
-
-## 🚀 WORKFLOW CLAUDE CODE
-Pour lancer une session de code :
-```bash
-cd ~/Desktop/chatbot-saas
-claude
-```
-Claude Code lit automatiquement CLAUDE.md à la racine — pense à le maintenir à jour avec les mêmes infos que ce document.
+- 03d862e feat: stats conversion rate + unanswered questions in client dashboard
+- 364d60d feat: structured FAQ editor in client dashboard
+- bb282db fix: FAQ parser handles free-text format
+- 6e8c29b feat: magic link button in Tester & evaluer tab
+- 524a83e feat: login URL + mailto in invite modal
+- 8086820 docs: add CLAUDE.md
+- 1a0e581 feat: track Shopify cart click as conversion (ecommerce only)
