@@ -111,11 +111,17 @@
 - Crons : rapport hebdo + suggestions auto
 
 ## À FAIRE ⬜
-1. Onglet SEO dans espace client (Google PageSpeed Insights API)
-2. Améliorer detectUnanswered() avec plus de patterns
-3. Intégration partenaire SEO/analytics (Semrush ou GA Data API)
+1. Onglet SEO PageSpeed Insights (espace client)
+2. Améliorer detectUnanswered() patterns
+3. Rate limiting Supabase-backed (remplacer in-memory Map)
+4. Seuil cleanup Supabase → 2000 rows
 
 ## Dernières updates
+### 09 juin 2026 — Audit & fixes
+- e7719d0 docs: rewrite CLAUDE.md with proper technical architecture
+- 3372c40 fix: hardcoded URL, XSS escaping, GitHub retry, sendLog on tab close
+- Index Supabase créés : business_name, created_at, session_id + colonne session_id ajoutée
+
 ### 09 juin 2026
 - 03d862e feat: stats conversion rate + unanswered questions in client dashboard
 - 364d60d feat: structured FAQ editor in client dashboard
