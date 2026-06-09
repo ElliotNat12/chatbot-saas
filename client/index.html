@@ -547,8 +547,8 @@ async function runPageSpeed() {
   error.style.display   = 'none';
   results.style.display = 'none';
   try {
-    var apiUrl = 'https://www.googleapis.com/pagespeedonline/v5/runPagespeed?url=' + encodeURIComponent(url) + '&strategy=mobile';
-    var r = await fetch(apiUrl);
+    var apiUrl = '/api/pagespeed?url=' + encodeURIComponent(url);
+    var r = await fetch(apiUrl, { headers: { 'Authorization': 'Bearer ' + getToken() } });
     if (!r.ok) throw new Error('Erreur API PageSpeed (' + r.status + ')');
     var data = await r.json();
     var cats = data.lighthouseResult && data.lighthouseResult.categories;
