@@ -280,9 +280,17 @@
         <button class="btn btn-secondary" id="invite-copy-btn" onclick="copyInviteLink()" style="white-space:nowrap;flex-shrink:0">Copier</button>
       </div>
     </div>
+    <div class="field" style="margin-top:.75rem">
+      <label>URL de connexion (à envoyer au client)</label>
+      <div style="display:flex;gap:.5rem;margin-top:.35rem">
+        <input type="text" id="invite-client-url" readonly style="font-size:12px;cursor:text;color:var(--muted)" />
+        <button class="btn btn-secondary" id="invite-url-copy-btn" onclick="copyClientUrl()" style="white-space:nowrap;flex-shrink:0">Copier</button>
+      </div>
+    </div>
     <div id="invite-err" style="font-size:13px;color:#dc2626;margin-top:.75rem;display:none"></div>
     <div class="modal-footer">
       <button class="btn btn-secondary" onclick="closeInviteModal()">Fermer</button>
+      <button class="btn btn-primary" id="invite-mailto-btn" onclick="openInviteMailto()">📧 Envoyer par email</button>
     </div>
   </div>
 </div>
@@ -1643,6 +1651,8 @@ async function sendInvite(slug) {
     const data = await r.json();
     if (!r.ok) throw new Error(data.error || 'Erreur');
     linkEl.value = data.inviteUrl || '';
+    const clientUrl = `https://chatbot-saas-nine.vercel.app/client/${slug}`;
+    document.getElementById('invite-client-url').value = clientUrl;
   } catch(e) {
     linkEl.value = '';
     errEl.textContent = e.message;
@@ -1650,6 +1660,31 @@ async function sendInvite(slug) {
   }
 }
 function closeInviteModal() { document.getElementById('invite-modal').classList.remove('visible'); }
+async function copyClientUrl() {
+  const input = document.getElementById('invite-client-url');
+  const btn = document.getElementById('invite-url-copy-btn');
+  try { await navigator.clipboard.writeText(input.value); } catch {
+    input.select(); document.execCommand('copy');
+  }
+  btn.textContent = '✓ Copié';
+  setTimeout(() => { btn.textContent = 'Copier'; }, 1500);
+}
+function openInviteMailto() {
+  const inviteUrl = document.getElementById('invite-link').value;
+  const clientUrl = document.getElementById('invite-client-url').value;
+  const subject = encodeURIComponent('Votre espace client ChatbotSaaS est prêt');
+  const body = encodeURIComponent(
+    'Bonjour,\n\n' +
+    'Votre espace client ChatbotSaaS est maintenant disponible.\n\n' +
+    '🔗 Lien d\'activation (valable 7 jours, à utiliser une seule fois) :\n' +
+    inviteUrl + '\n\n' +
+    'Une fois votre mot de passe créé, reconnectez-vous à tout moment ici :\n' +
+    clientUrl + '\n\n' +
+    'À bientôt,\n' +
+    'L\'équipe ChatbotSaaS'
+  );
+  window.location.href = `mailto:?subject=${subject}&body=${body}`;
+}
 async function copyInviteLink() {
   const link = document.getElementById('invite-link').value;
   const btn = document.getElementById('invite-copy-btn');
