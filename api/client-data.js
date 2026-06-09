@@ -136,6 +136,7 @@ module.exports = async function handler(req, res) {
         const psUrl = 'https://www.googleapis.com/pagespeedonline/v5/runPagespeed'
           + '?url=' + encodeURIComponent(url)
           + '&strategy=mobile'
+          + '&category=performance&category=accessibility&category=seo&category=best-practices'
           + (key ? '&key=' + key : '');
         try {
           const r = await fetch(psUrl);

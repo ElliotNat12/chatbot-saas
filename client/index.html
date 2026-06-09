@@ -551,12 +551,9 @@ async function runPageSpeed() {
     var r = await fetch(apiUrl, { headers: { 'Authorization': 'Bearer ' + getToken() } });
     if (!r.ok) throw new Error('Erreur API PageSpeed (' + r.status + ')');
     var data = await r.json();
-    console.log('full pagespeed response keys:', Object.keys(data));
-    console.log('cats:', JSON.stringify(data.lighthouseResult && data.lighthouseResult.categories));
     var lhr = data.lighthouseResult;
     if (!lhr || !lhr.categories) throw new Error("Réponse invalide de l'API PageSpeed");
     var cats = lhr.categories;
-    console.log('cats:', JSON.stringify(cats));
     // INTENTION : Affiche un score 0-100 avec couleur verte/orange/rouge selon le seuil.
     function setScore(elId, cat) {
       var score = (cat != null && cat.score != null) ? cat.score : null;
