@@ -66,6 +66,15 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
 .spinner{display:inline-block;width:14px;height:14px;border:2px solid rgba(255,255,255,.4);border-top-color:#fff;border-radius:50%;animation:spin .6s linear infinite;vertical-align:middle;margin-right:4px}
 @keyframes spin{to{transform:rotate(360deg)}}
 .spinner-dark{border-color:rgba(37,99,235,.2);border-top-color:var(--accent)}
+/* ─── Unanswered questions ─── */
+.unanswered-list{display:flex;flex-direction:column;gap:.5rem;margin-top:.75rem}
+.unanswered-item{display:flex;align-items:center;justify-content:space-between;gap:1rem;background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:.6rem .9rem;font-size:13px}
+.unanswered-q{flex:1;color:var(--text)}
+.unanswered-count{font-size:11px;color:var(--muted);white-space:nowrap;margin-right:.4rem}
+.btn-add-faq{padding:4px 10px;background:var(--accent);color:#fff;border:none;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;transition:opacity .15s}
+.btn-add-faq:hover{opacity:.85}
+.btn-add-faq:disabled{opacity:.4;cursor:not-allowed}
+.empty-state{font-size:13px;color:var(--muted);text-align:center;padding:1rem 0}
 </style>
 </head>
 <body>
@@ -98,7 +107,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
     <!-- SECTION 1 — Stats -->
     <div class="section-card">
       <div class="section-title">📊 Cette semaine</div>
-      <div class="stats-row">
+      <div class="stats-row" style="grid-template-columns:1fr 1fr 1fr">
         <div class="stat-box">
           <div class="stat-val" id="stat-conv">—</div>
           <div class="stat-lbl">Conversations</div>
@@ -107,7 +116,18 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
           <div class="stat-val" id="stat-leads">—</div>
           <div class="stat-lbl">Leads qualifiés</div>
         </div>
+        <div class="stat-box">
+          <div class="stat-val" id="stat-rate">—</div>
+          <div class="stat-lbl">Taux de conversion</div>
+        </div>
       </div>
+    </div>
+
+    <!-- SECTION 1b — Questions sans réponse -->
+    <div class="section-card" id="unanswered-card" style="display:none">
+      <div class="section-title">❓ Questions sans réponse</div>
+      <p class="form-hint">Ces questions ont été posées à votre chatbot mais n'ont pas eu de réponse satisfaisante. Ajoutez-les à votre FAQ d'un clic.</p>
+      <div class="unanswered-list" id="unanswered-list"></div>
     </div>
 
     <!-- SECTION 2 — Contact -->
@@ -275,7 +295,23 @@ async function loadStats(businessName) {
     var s = await r.json();
     document.getElementById('stat-conv').textContent = s.conversations ?? '—';
     document.getElementById('stat-leads').textContent = s.leads ?? '—';
-  } catch(e) { /* keep —— */ }
+    document.getElementById('stat-rate').textContent = s.conversion_rate != null ? s.conversion_rate + '%' : '—';
+    var card = document.getElementById('unanswered-card');
+    var list = document.getElementById('unanswered-list');
+    if (s.unanswered && s.unanswered.length > 0) {
+      card.style.display = 'block';
+      list.innerHTML = s.unanswered.slice(0, 10).map(function(u) {
+        var q = u.question.replace(/</g,'&lt;').replace(/>/g,'&gt;');
+        return '<div class="unanswered-item">' +
+          '<span class="unanswered-q">' + q + '</span>' +
+          '<span class="unanswered-count">' + u.count + 'x</span>' +
+          '<button class="btn-add-faq" onclick="addToFaq(this, &quot;' + q.replace(/&quot;/g,'') + '&quot;)">+ FAQ</button></div>';
+      }).join('');
+    } else {
+      card.style.display = 'block';
+      list.innerHTML = '<p class="empty-state">✅ Toutes les questions ont trouvé une réponse cette semaine.</p>';
+    }
+  } catch(e) { /* keep — */ }
 }
 
 // ─── Save contact ─────────────────────────────────────────────────────────────
@@ -322,6 +358,26 @@ async function saveFaq() {
 function refreshIframe() {
   var iframe = document.getElementById('chatbot-iframe');
   iframe.src = iframe.src;
+}
+
+
+async function addToFaq(btn, question) {
+  btn.disabled = true;
+  btn.textContent = '…';
+  try {
+    var currentFaq = document.getElementById('f-faq').value.trim();
+    var newEntry = '
+Q: ' + question + '
+R: ';
+    document.getElementById('f-faq').value = currentFaq + newEntry;
+    document.getElementById('f-faq').scrollIntoView({ behavior: 'smooth', block: 'center' });
+    document.getElementById('f-faq').focus();
+    btn.textContent = '✓ Ajouté';
+    btn.style.background = 'var(--green)';
+  } catch(e) {
+    btn.disabled = false;
+    btn.textContent = '+ FAQ';
+  }
 }
 
 // ─── Boot ─────────────────────────────────────────────────────────────────────
