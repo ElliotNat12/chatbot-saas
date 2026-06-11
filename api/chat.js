@@ -1,6 +1,6 @@
 // INTENTION : Limite le nombre de requêtes par IP via Supabase (persistant entre cold starts).
-// Fenêtre fixe d'1h, max 20 requêtes. Utilise fetch raw comme le reste du projet.
-const RATE_LIMIT = 20;
+// Fenêtre fixe d'1h, max 200 requêtes. Utilise fetch raw comme le reste du projet.
+const RATE_LIMIT = 200;
 const RATE_WINDOW_MS = 60 * 60 * 1000; // 1 heure
 
 function getClientIp(req) {
