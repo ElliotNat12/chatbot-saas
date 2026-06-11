@@ -604,6 +604,29 @@
     function addToCart(variantId, fallbackUrl) {
       if (variantId && !cartItems.includes(variantId)) cartItems.push(variantId);
       updateStickyCart();
+      // INTENTION : Au premier ajout au panier, affiche 3 boutons de compléments directement dans le chat — sans passer par Claude.
+      if (cartItems.length === 1) {
+        const cartUrl = (cfg.shopify?.storeUrl || cfg.bookingUrl || '') + '/cart/' + cartItems.map(id => id + ':1').join(',');
+        const wrap = document.createElement('div');
+        wrap.className = 'cb-shop-btns';
+        const btnDebardeur = document.createElement('button');
+        btnDebardeur.className = 'cb-color-btn';
+        btnDebardeur.textContent = 'Ajouter un débardeur';
+        btnDebardeur.addEventListener('click', () => { wrap.remove(); sendMsg('débardeur'); }, { once: true });
+        const btnPads = document.createElement('button');
+        btnPads.className = 'cb-color-btn';
+        btnPads.textContent = 'Ajouter des pads';
+        btnPads.addEventListener('click', () => { wrap.remove(); sendMsg('pads'); }, { once: true });
+        const btnCart = document.createElement('button');
+        btnCart.className = 'cb-color-btn';
+        btnCart.textContent = 'Voir mon panier';
+        btnCart.addEventListener('click', () => { trackConversion(); window.open(cartUrl, '_blank'); });
+        wrap.appendChild(btnDebardeur);
+        wrap.appendChild(btnPads);
+        wrap.appendChild(btnCart);
+        messages.appendChild(wrap);
+        messages.scrollTop = messages.scrollHeight;
+      }
     }
 
     // INTENTION : Marque la session comme convertie au premier clic panier (ecommerce uniquement).
