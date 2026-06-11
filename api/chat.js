@@ -1,13 +1,7 @@
-const { createClient } = require('@supabase/supabase-js');
-
 // INTENTION : Limite le nombre de requêtes par IP via Supabase (persistant entre cold starts).
-// Fenêtre glissante d'1h, max 20 requêtes. Remplace l'ancien Map in-memory.
+// Fenêtre fixe d'1h, max 20 requêtes. Utilise fetch raw comme le reste du projet.
 const RATE_LIMIT = 20;
 const RATE_WINDOW_MS = 60 * 60 * 1000; // 1 heure
-
-function getSupabase() {
-  return createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_KEY);
-}
 
 function getClientIp(req) {
   const xff = req.headers['x-forwarded-for'];
@@ -17,38 +11,42 @@ function getClientIp(req) {
 // INTENTION : Vérifie si l'IP dépasse la limite. Retourne true si bloquée, false si autorisée.
 // Nettoie aussi les anciennes lignes (>2h) en fire-and-forget pour éviter le gonflement de la table.
 async function isRateLimited(ip) {
-  const supabase = getSupabase();
+  const base = process.env.SUPABASE_URL;
+  const key = process.env.SUPABASE_SERVICE_KEY;
+  const headers = { 'Content-Type': 'application/json', 'apikey': key, 'Authorization': `Bearer ${key}` };
   const now = new Date();
   const windowCutoff = new Date(now.getTime() - RATE_WINDOW_MS).toISOString();
 
-  // Nettoyage des lignes > 2h (fire-and-forget, ne bloque pas la réponse)
-  supabase.from('rate_limits')
-    .delete()
-    .lt('window_start', new Date(now.getTime() - 2 * RATE_WINDOW_MS).toISOString())
-    .then(() => {});
+  // Nettoyage des lignes > 2h (fire-and-forget)
+  fetch(`${base}/rest/v1/rate_limits?window_start=lt.${new Date(now.getTime() - 2 * RATE_WINDOW_MS).toISOString()}`, {
+    method: 'DELETE', headers: { ...headers, 'Prefer': 'return=minimal' }
+  }).catch(() => {});
 
-  const { data } = await supabase
-    .from('rate_limits')
-    .select('window_start, request_count')
-    .eq('ip', ip)
-    .maybeSingle();
+  const res = await fetch(
+    `${base}/rest/v1/rate_limits?ip=eq.${encodeURIComponent(ip)}&select=window_start,request_count`,
+    { headers: { ...headers, 'Accept': 'application/json' } }
+  );
+  const rows = await res.json();
+  const row = Array.isArray(rows) ? rows[0] : null;
 
   // Pas de ligne ou fenêtre expirée → démarrer une nouvelle fenêtre
-  if (!data || data.window_start < windowCutoff) {
-    await supabase.from('rate_limits').upsert(
-      { ip, window_start: now.toISOString(), request_count: 1 },
-      { onConflict: 'ip' }
-    );
+  if (!row || row.window_start < windowCutoff) {
+    await fetch(`${base}/rest/v1/rate_limits`, {
+      method: 'POST',
+      headers: { ...headers, 'Prefer': 'resolution=merge-duplicates,return=minimal' },
+      body: JSON.stringify({ ip, window_start: now.toISOString(), request_count: 1 })
+    });
     return false;
   }
 
-  if (data.request_count >= RATE_LIMIT) return true;
+  if (row.request_count >= RATE_LIMIT) return true;
 
-  // INTENTION : Incrément atomique du compteur pour l'IP dans la fenêtre courante.
-  await supabase
-    .from('rate_limits')
-    .update({ request_count: data.request_count + 1 })
-    .eq('ip', ip);
+  // INTENTION : Incrémente le compteur pour l'IP dans la fenêtre courante.
+  await fetch(`${base}/rest/v1/rate_limits?ip=eq.${encodeURIComponent(ip)}`, {
+    method: 'PATCH',
+    headers: { ...headers, 'Prefer': 'return=minimal' },
+    body: JSON.stringify({ request_count: row.request_count + 1 })
+  });
 
   return false;
 }
