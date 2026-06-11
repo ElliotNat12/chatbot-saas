@@ -537,6 +537,16 @@
             setTimeout(() => { a.textContent = originalLabel; }, 1500);
           });
           wrap.appendChild(a);
+        } else if (tag.type === 'produit') {
+          const btn = document.createElement('button');
+          btn.className = 'cb-color-btn';
+          btn.textContent = tag.label;
+          btn.addEventListener('click', () => {
+            const msgText = tag.label.includes(' ') ? tag.label.slice(tag.label.indexOf(' ') + 1).trim() : tag.label;
+            wrap.remove();
+            sendMsg(msgText);
+          }, { once: true });
+          wrap.appendChild(btn);
         }
         if (wrap.children.length) {
           messages.appendChild(wrap);
@@ -687,6 +697,7 @@
       clean = clean.replace(/\[COULEURS\]/g, () => { tags.push({ type: 'couleurs' }); return ''; });
       clean = clean.replace(/\[TAILLES:([^\]]+)\]/g, (_, coloris) => { tags.push({ type: 'tailles', coloris: coloris.trim() }); return ''; });
       clean = clean.replace(/\[PANIER:(\d+):([^\]]+)\](?:\([^)]*\))?/g, (_, id, label) => { tags.push({ type: 'panier', id, label: label.trim() }); return ''; });
+      clean = clean.replace(/\[PRODUIT:([^:]+):([^\]]+)\]/g, (_, key, label) => { tags.push({ type: 'produit', key: key.trim(), label: label.trim() }); return ''; });
       return { clean: clean.trim(), tags };
     }
 
