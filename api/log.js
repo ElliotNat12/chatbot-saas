@@ -68,6 +68,34 @@ function detectUnanswered(messages) {
   return unanswered;
 }
 
+// INTENTION : Après chaque insert, vérifie si la table dépasse 2000 lignes.
+// Si oui, supprime les 200 plus anciennes pour revenir à ~1800. Fire-and-forget.
+async function cleanupConversations() {
+  const url = process.env.SUPABASE_URL;
+  const key = process.env.SUPABASE_SERVICE_KEY;
+  const headers = { 'apikey': key, 'Authorization': `Bearer ${key}` };
+
+  const countRes = await fetch(`${url}/rest/v1/conversations?select=id`, {
+    method: 'HEAD',
+    headers: { ...headers, 'Prefer': 'count=exact' }
+  });
+  const total = parseInt(countRes.headers.get('content-range')?.split('/')[1] || '0', 10);
+  if (total <= 2000) return;
+
+  const idsRes = await fetch(
+    `${url}/rest/v1/conversations?select=id&order=created_at.asc&limit=200`,
+    { headers }
+  );
+  const rows = await idsRes.json();
+  if (!Array.isArray(rows) || rows.length === 0) return;
+
+  const ids = rows.map(r => r.id).join(',');
+  await fetch(`${url}/rest/v1/conversations?id=in.(${ids})`, {
+    method: 'DELETE',
+    headers: { ...headers, 'Prefer': 'return=minimal' }
+  });
+}
+
 module.exports = async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
@@ -129,6 +157,9 @@ module.exports = async function handler(req, res) {
       const err = await insertRes.text();
       return res.status(502).json({ error: 'Supabase insert error', detail: err });
     }
+
+    // INTENTION : Nettoyage asynchrone — ne bloque pas la réponse au client.
+    cleanupConversations().catch(() => {});
 
     return res.status(200).json({ ok: true, unanswered: unanswered_questions.length });
 
